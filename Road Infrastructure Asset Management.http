@@ -1,0 +1,6 @@
+@Road_Infrastructure_Asset_Management_HostAddress = http://localhost:5101
+
+GET {{Road_Infrastructure_Asset_Management_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
