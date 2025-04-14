@@ -1,4 +1,4 @@
-﻿namespace Road_Infrastructure_Asset_Management.Model.Report
+﻿namespace Road_Infrastructure_Asset_Management_2.Model.Report
 {
     public class IncidentsOverTime
     {

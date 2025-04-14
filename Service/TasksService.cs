@@ -1,18 +1,18 @@
 ﻿using Npgsql;
-using Road_Infrastructure_Asset_Management.Interface;
-using Road_Infrastructure_Asset_Management.Model.Request;
-using Road_Infrastructure_Asset_Management.Model.Response;
+using Road_Infrastructure_Asset_Management_2.Interface;
+using Road_Infrastructure_Asset_Management_2.Model.Request;
+using Road_Infrastructure_Asset_Management_2.Model.Response;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Road_Infrastructure_Asset_Management_2.Model.Geometry;
 
-namespace Road_Infrastructure_Asset_Management.Service
+namespace Road_Infrastructure_Asset_Management_2.Service
 {
     public class TasksService : ITasksService
     {
         private readonly string _connectionString;
-        private static readonly string[] ValidPriorities = { "low", "medium", "high" };
-        private static readonly string[] ValidStatuses = { "pending", "in_progress", "completed" };
 
         public TasksService(string connectionString)
         {
@@ -25,7 +25,7 @@ namespace Road_Infrastructure_Asset_Management.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT * FROM tasks";
+                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, created_at FROM tasks";
 
                 try
                 {
@@ -37,15 +37,16 @@ namespace Road_Infrastructure_Asset_Management.Service
                             var task = new TasksResponse
                             {
                                 task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
-                                asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
-                                assigned_to = reader.GetInt32(reader.GetOrdinal("assigned_to")),
-                                task_type = reader.GetString(reader.GetOrdinal("task_type")),
-                                description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
-                                priority = reader.GetString(reader.GetOrdinal("priority")),
-                                status = reader.GetString(reader.GetOrdinal("status")),
-                                due_date = reader.GetDateTime(reader.GetOrdinal("due_date")),
-                                created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                updated_at = reader.GetDateTime(reader.GetOrdinal("updated_at"))
+                                task_type = reader.IsDBNull(reader.GetOrdinal("task_type")) ? null : reader.GetString(reader.GetOrdinal("task_type")),
+                                work_volume = reader.IsDBNull(reader.GetOrdinal("work_volume")) ? null : reader.GetString(reader.GetOrdinal("work_volume")),
+                                status = reader.IsDBNull(reader.GetOrdinal("status")) ? null : reader.GetString(reader.GetOrdinal("status")),
+                                address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                geometry = ParseGeoJson(reader.GetString(reader.GetOrdinal("geometry")), "geometry"),
+                                start_date = reader.IsDBNull(reader.GetOrdinal("start_date")) ? null : reader.GetDateTime(reader.GetOrdinal("start_date")),
+                                end_date = reader.IsDBNull(reader.GetOrdinal("end_date")) ? null : reader.GetDateTime(reader.GetOrdinal("end_date")),
+                                execution_unit_id = reader.IsDBNull(reader.GetOrdinal("execution_unit_id")) ? null : reader.GetInt32(reader.GetOrdinal("execution_unit_id")),
+                                supervisor_id = reader.IsDBNull(reader.GetOrdinal("supervisor_id")) ? null : reader.GetInt32(reader.GetOrdinal("supervisor_id")),
+                                created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             tasks.Add(task);
                         }
@@ -68,7 +69,7 @@ namespace Road_Infrastructure_Asset_Management.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT * FROM tasks WHERE task_id = @id";
+                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, created_at FROM tasks WHERE task_id = @id";
 
                 try
                 {
@@ -82,15 +83,16 @@ namespace Road_Infrastructure_Asset_Management.Service
                                 return new TasksResponse
                                 {
                                     task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
-                                    asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
-                                    assigned_to = reader.GetInt32(reader.GetOrdinal("assigned_to")),
-                                    task_type = reader.GetString(reader.GetOrdinal("task_type")),
-                                    description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
-                                    priority = reader.GetString(reader.GetOrdinal("priority")),
-                                    status = reader.GetString(reader.GetOrdinal("status")),
-                                    due_date = reader.GetDateTime(reader.GetOrdinal("due_date")),
-                                    created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                    updated_at = reader.GetDateTime(reader.GetOrdinal("updated_at"))
+                                    task_type = reader.IsDBNull(reader.GetOrdinal("task_type")) ? null : reader.GetString(reader.GetOrdinal("task_type")),
+                                    work_volume = reader.IsDBNull(reader.GetOrdinal("work_volume")) ? null : reader.GetString(reader.GetOrdinal("work_volume")),
+                                    status = reader.IsDBNull(reader.GetOrdinal("status")) ? null : reader.GetString(reader.GetOrdinal("status")),
+                                    address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                    geometry = ParseGeoJson(reader.GetString(reader.GetOrdinal("geometry")), "geometry"),
+                                    start_date = reader.IsDBNull(reader.GetOrdinal("start_date")) ? null : reader.GetDateTime(reader.GetOrdinal("start_date")),
+                                    end_date = reader.IsDBNull(reader.GetOrdinal("end_date")) ? null : reader.GetDateTime(reader.GetOrdinal("end_date")),
+                                    execution_unit_id = reader.IsDBNull(reader.GetOrdinal("execution_unit_id")) ? null : reader.GetInt32(reader.GetOrdinal("execution_unit_id")),
+                                    supervisor_id = reader.IsDBNull(reader.GetOrdinal("supervisor_id")) ? null : reader.GetInt32(reader.GetOrdinal("supervisor_id")),
+                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
                             }
                             return null;
@@ -117,21 +119,23 @@ namespace Road_Infrastructure_Asset_Management.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO tasks 
-                (asset_id, assigned_to, task_type, description, priority, status, due_date)
-                VALUES (@asset_id, @assigned_to, @task_type, @description, @priority, @status, @due_date)
+                (task_type, work_volume, status, address, geometry, start_date, end_date, execution_unit_id, supervisor_id)
+                VALUES (@task_type, @work_volume, @status, @address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @start_date, @end_date, @execution_unit_id, @supervisor_id)
                 RETURNING task_id";
 
                 try
                 {
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
-                        cmd.Parameters.AddWithValue("@asset_id", entity.asset_id);
-                        cmd.Parameters.AddWithValue("@assigned_to", entity.assigned_to);
                         cmd.Parameters.AddWithValue("@task_type", entity.task_type);
-                        cmd.Parameters.AddWithValue("@description", entity.description ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@priority", entity.priority);
+                        cmd.Parameters.AddWithValue("@work_volume", (object)entity.work_volume ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@status", entity.status);
-                        cmd.Parameters.AddWithValue("@due_date", entity.due_date);
+                        cmd.Parameters.AddWithValue("@address", (object)entity.address ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@geometry", JsonConvert.SerializeObject(entity.geometry));
+                        cmd.Parameters.AddWithValue("@start_date", (object)entity.start_date ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@end_date", (object)entity.end_date ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@execution_unit_id", (object)entity.execution_unit_id ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@supervisor_id", (object)entity.supervisor_id ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         return await GetTaskById(newId);
                     }
@@ -140,17 +144,14 @@ namespace Road_Infrastructure_Asset_Management.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
-                        if (ex.Message.Contains("asset_id"))
-                            throw new InvalidOperationException($"Asset ID {entity.asset_id} does not exist.", ex);
-                        if (ex.Message.Contains("assigned_to"))
-                            throw new InvalidOperationException($"User ID {entity.assigned_to} does not exist.", ex);
+                        if (ex.Message.Contains("execution_unit_id"))
+                            throw new InvalidOperationException($"User ID {entity.execution_unit_id} does not exist.", ex);
+                        if (ex.Message.Contains("supervisor_id"))
+                            throw new InvalidOperationException($"User ID {entity.supervisor_id} does not exist.", ex);
                     }
-                    else if (ex.SqlState == "23514") // Check constraint violation
+                    else if (ex.SqlState == "22023") // Invalid GeoJSON
                     {
-                        if (ex.Message.Contains("priority"))
-                            throw new InvalidOperationException($"Priority must be one of: {string.Join(", ", ValidPriorities)}.", ex);
-                        if (ex.Message.Contains("status"))
-                            throw new InvalidOperationException($"Status must be one of: {string.Join(", ", ValidStatuses)}.", ex);
+                        throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
                     throw new InvalidOperationException("Failed to create task.", ex);
                 }
@@ -170,14 +171,15 @@ namespace Road_Infrastructure_Asset_Management.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 UPDATE tasks SET
-                    asset_id = @asset_id,
-                    assigned_to = @assigned_to,
                     task_type = @task_type,
-                    description = @description,
-                    priority = @priority,
+                    work_volume = @work_volume,
                     status = @status,
-                    due_date = @due_date,
-                    updated_at = @updated_at
+                    address = @address,
+                    geometry = ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405),
+                    start_date = @start_date,
+                    end_date = @end_date,
+                    execution_unit_id = @execution_unit_id,
+                    supervisor_id = @supervisor_id
                 WHERE task_id = @id";
 
                 try
@@ -185,14 +187,15 @@ namespace Road_Infrastructure_Asset_Management.Service
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
                         cmd.Parameters.AddWithValue("@id", id);
-                        cmd.Parameters.AddWithValue("@asset_id", entity.asset_id);
-                        cmd.Parameters.AddWithValue("@assigned_to", entity.assigned_to);
                         cmd.Parameters.AddWithValue("@task_type", entity.task_type);
-                        cmd.Parameters.AddWithValue("@description", entity.description ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@priority", entity.priority);
+                        cmd.Parameters.AddWithValue("@work_volume", (object)entity.work_volume ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@status", entity.status);
-                        cmd.Parameters.AddWithValue("@due_date", entity.due_date);
-                        cmd.Parameters.AddWithValue("@updated_at", DateTime.UtcNow); // Cập nhật thời gian
+                        cmd.Parameters.AddWithValue("@address", (object)entity.address ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@geometry", JsonConvert.SerializeObject(entity.geometry));
+                        cmd.Parameters.AddWithValue("@start_date", (object)entity.start_date ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@end_date", (object)entity.end_date ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@execution_unit_id", (object)entity.execution_unit_id ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@supervisor_id", (object)entity.supervisor_id ?? DBNull.Value);
 
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
@@ -206,17 +209,14 @@ namespace Road_Infrastructure_Asset_Management.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
-                        if (ex.Message.Contains("asset_id"))
-                            throw new InvalidOperationException($"Asset ID {entity.asset_id} does not exist.", ex);
-                        if (ex.Message.Contains("assigned_to"))
-                            throw new InvalidOperationException($"User ID {entity.assigned_to} does not exist.", ex);
+                        if (ex.Message.Contains("execution_unit_id"))
+                            throw new InvalidOperationException($"User ID {entity.execution_unit_id} does not exist.", ex);
+                        if (ex.Message.Contains("supervisor_id"))
+                            throw new InvalidOperationException($"User ID {entity.supervisor_id} does not exist.", ex);
                     }
-                    else if (ex.SqlState == "23514") // Check constraint violation
+                    else if (ex.SqlState == "22023") // Invalid GeoJSON
                     {
-                        if (ex.Message.Contains("priority"))
-                            throw new InvalidOperationException($"Priority must be one of: {string.Join(", ", ValidPriorities)}.", ex);
-                        if (ex.Message.Contains("status"))
-                            throw new InvalidOperationException($"Status must be one of: {string.Join(", ", ValidStatuses)}.", ex);
+                        throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
                     throw new InvalidOperationException($"Failed to update task with ID {id}.", ex);
                 }
@@ -247,7 +247,7 @@ namespace Road_Infrastructure_Asset_Management.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
-                        throw new InvalidOperationException($"Cannot delete task with ID {id} because it is referenced by other records (e.g., costs or incident_history).", ex);
+                        throw new InvalidOperationException($"Cannot delete task with ID {id} because it is referenced by other records (e.g., costs).", ex);
                     }
                     throw new InvalidOperationException($"Failed to delete task with ID {id}.", ex);
                 }
@@ -261,29 +261,45 @@ namespace Road_Infrastructure_Asset_Management.Service
         // Helper method
         private void ValidateRequest(TasksRequest entity)
         {
-            if (entity.asset_id <= 0)
-            {
-                throw new ArgumentException("Asset ID must be a positive integer.");
-            }
-            if (entity.assigned_to <= 0)
-            {
-                throw new ArgumentException("Assigned to user ID must be a positive integer.");
-            }
             if (string.IsNullOrWhiteSpace(entity.task_type))
             {
                 throw new ArgumentException("Task type cannot be empty.");
             }
-            if (!ValidPriorities.Contains(entity.priority))
+            if (string.IsNullOrWhiteSpace(entity.status))
             {
-                throw new ArgumentException($"Priority must be one of: {string.Join(", ", ValidPriorities)}.");
+                throw new ArgumentException("Status cannot be empty.");
             }
-            if (!ValidStatuses.Contains(entity.status))
+            if (entity.geometry == null || string.IsNullOrEmpty(entity.geometry.type))
             {
-                throw new ArgumentException($"Status must be one of: {string.Join(", ", ValidStatuses)}.");
+                throw new ArgumentException("Geometry cannot be null or invalid.");
             }
-            if (entity.due_date == default(DateTime))
+            try
             {
-                throw new ArgumentException("Due date must be provided.");
+                JsonConvert.SerializeObject(entity.geometry);
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException("Invalid GeoJSON format for geometry.", ex);
+            }
+            if (entity.execution_unit_id.HasValue && entity.execution_unit_id <= 0)
+            {
+                throw new ArgumentException("Execution unit ID must be a positive integer.");
+            }
+            if (entity.supervisor_id.HasValue && entity.supervisor_id <= 0)
+            {
+                throw new ArgumentException("Supervisor ID must be a positive integer.");
+            }
+        }
+
+        private GeoJsonGeometry ParseGeoJson(string json, string fieldName)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<GeoJsonGeometry>(json);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException($"Invalid GeoJSON format for {fieldName}.", ex);
             }
         }
     }

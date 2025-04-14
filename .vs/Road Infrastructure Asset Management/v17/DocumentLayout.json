@@ -1,7 +1,24 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management\\",
-  "Documents": [],
+  "WorkspaceRootPath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\service\\usersservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:service\\usersservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\jwt\\jwttokenhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:jwt\\jwttokenhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\service\\tasksservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:service\\tasksservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\service\\incidentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:service\\incidentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,7 +26,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 9,
           "Children": [
             {
               "$type": "Bookmark",
@@ -42,6 +59,55 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "JwtTokenHelper.cs",
+              "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Jwt\\JwtTokenHelper.cs",
+              "RelativeDocumentMoniker": "Jwt\\JwtTokenHelper.cs",
+              "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Jwt\\JwtTokenHelper.cs",
+              "RelativeToolTip": "Jwt\\JwtTokenHelper.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAgwB8AAABKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-14T04:46:53.008Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "UsersService.cs",
+              "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\UsersService.cs",
+              "RelativeDocumentMoniker": "Service\\UsersService.cs",
+              "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\UsersService.cs",
+              "RelativeToolTip": "Service\\UsersService.cs",
+              "ViewState": "AgIAACABAAAAAAAAAAAYwDcBAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-14T04:28:13.353Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "TasksService.cs",
+              "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\TasksService.cs",
+              "RelativeDocumentMoniker": "Service\\TasksService.cs",
+              "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\TasksService.cs",
+              "RelativeToolTip": "Service\\TasksService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADEBAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-14T04:26:37.226Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "IncidentService.cs",
+              "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\IncidentService.cs",
+              "RelativeDocumentMoniker": "Service\\IncidentService.cs",
+              "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\IncidentService.cs",
+              "RelativeToolTip": "Service\\IncidentService.cs",
+              "ViewState": "AgIAAEUAAAAAAAAAAAAcwBUBAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-14T04:24:05.363Z"
             }
           ]
         },

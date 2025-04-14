@@ -1,13 +1,16 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Npgsql;
-using Road_Infrastructure_Asset_Management.Interface;
-using Road_Infrastructure_Asset_Management.Model.Geometry;
-using Road_Infrastructure_Asset_Management.Model.Request;
-using Road_Infrastructure_Asset_Management.Model.Response;
+using Road_Infrastructure_Asset_Management_2.Interface;
+using Road_Infrastructure_Asset_Management_2.Model.Geometry;
+using Road_Infrastructure_Asset_Management_2.Model.Request;
+using Road_Infrastructure_Asset_Management_2.Model.Response;
+using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Threading.Tasks;
 
-namespace Road_Infrastructure_Asset_Management.Service
+namespace Road_Infrastructure_Asset_Management_2.Service
 {
     public class AssetsService : IAssetsService
     {
@@ -24,7 +27,11 @@ namespace Road_Infrastructure_Asset_Management.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT asset_id, category_id, ST_AsGeoJSON(geometry) as geometry, attributes, lifecycle_stage, installation_date, expected_lifetime, condition, last_inspection_date, created_at, updated_at FROM assets";
+                var sql = @"SELECT asset_id, category_id, ST_AsGeoJSON(geometry) as geometry, asset_name, asset_code, 
+                           address, construction_year, operation_year, land_area, floor_area, 
+                           original_value, remaining_value, asset_status, installation_unit, 
+                           management_unit, custom_attributes, created_at 
+                           FROM assets";
 
                 try
                 {
@@ -36,16 +43,22 @@ namespace Road_Infrastructure_Asset_Management.Service
                             var asset = new AssetsResponse
                             {
                                 asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
-                                cagetory_id = reader.GetInt32(reader.GetOrdinal("category_id")),
+                                category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
                                 geometry = ParseGeoJson(reader.GetString("geometry"), "geometry"),
-                                attributes = ParseJsonObject(reader.GetString("attributes"), "attributes"),
-                                lifecycle_stage = reader.GetString(reader.GetOrdinal("lifecycle_stage")),
-                                installation_date = reader.IsDBNull(reader.GetOrdinal("installation_date")) ? null : reader.GetDateTime(reader.GetOrdinal("installation_date")),
-                                expected_lifetime = reader.GetInt32(reader.GetOrdinal("expected_lifetime")),
-                                condition = reader.GetString(reader.GetOrdinal("condition")),
-                                last_inspection_date = reader.IsDBNull(reader.GetOrdinal("last_inspection_date")) ? null : reader.GetDateTime(reader.GetOrdinal("last_inspection_date")),
-                                created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                updated_at = reader.IsDBNull(reader.GetOrdinal("updated_at")) ? null : reader.GetDateTime(reader.GetOrdinal("updated_at")),
+                                asset_name = reader.IsDBNull(reader.GetOrdinal("asset_name")) ? null : reader.GetString(reader.GetOrdinal("asset_name")),
+                                asset_code = reader.IsDBNull(reader.GetOrdinal("asset_code")) ? null : reader.GetString(reader.GetOrdinal("asset_code")),
+                                address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                construction_year = reader.IsDBNull(reader.GetOrdinal("construction_year")) ? null : reader.GetDateTime(reader.GetOrdinal("construction_year")),
+                                operation_year = reader.IsDBNull(reader.GetOrdinal("operation_year")) ? null : reader.GetDateTime(reader.GetOrdinal("operation_year")),
+                                land_area = reader.IsDBNull(reader.GetOrdinal("land_area")) ? null : reader.GetDouble(reader.GetOrdinal("land_area")),
+                                floor_area = reader.IsDBNull(reader.GetOrdinal("floor_area")) ? null : reader.GetDouble(reader.GetOrdinal("floor_area")),
+                                original_value = reader.IsDBNull(reader.GetOrdinal("original_value")) ? null : reader.GetDouble(reader.GetOrdinal("original_value")),
+                                remaining_value = reader.IsDBNull(reader.GetOrdinal("remaining_value")) ? null : reader.GetDouble(reader.GetOrdinal("remaining_value")),
+                                asset_status = reader.IsDBNull(reader.GetOrdinal("asset_status")) ? null : reader.GetString(reader.GetOrdinal("asset_status")),
+                                installation_unit = reader.IsDBNull(reader.GetOrdinal("installation_unit")) ? null : reader.GetString(reader.GetOrdinal("installation_unit")),
+                                management_unit = reader.IsDBNull(reader.GetOrdinal("management_unit")) ? null : reader.GetString(reader.GetOrdinal("management_unit")),
+                                custom_attributes = reader.IsDBNull(reader.GetOrdinal("custom_attributes")) ? null : JObject.Parse(reader.GetString(reader.GetOrdinal("custom_attributes"))),
+                                created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             assets.Add(asset);
                         }
@@ -68,7 +81,11 @@ namespace Road_Infrastructure_Asset_Management.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT asset_id, category_id, ST_AsGeoJSON(geometry) as geometry, attributes, lifecycle_stage, installation_date, expected_lifetime, condition, last_inspection_date, created_at, updated_at FROM assets WHERE asset_id = @id";
+                var sql = @"SELECT asset_id, category_id, ST_AsGeoJSON(geometry) as geometry, asset_name, asset_code, 
+                           address, construction_year, operation_year, land_area, floor_area, 
+                           original_value, remaining_value, asset_status, installation_unit, 
+                           management_unit, custom_attributes, created_at 
+                           FROM assets WHERE asset_id = @id";
 
                 try
                 {
@@ -82,16 +99,22 @@ namespace Road_Infrastructure_Asset_Management.Service
                                 return new AssetsResponse
                                 {
                                     asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
-                                    cagetory_id = reader.GetInt32(reader.GetOrdinal("category_id")),
+                                    category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
                                     geometry = ParseGeoJson(reader.GetString("geometry"), "geometry"),
-                                    attributes = ParseJsonObject(reader.GetString("attributes"), "attributes"),
-                                    lifecycle_stage = reader.GetString(reader.GetOrdinal("lifecycle_stage")),
-                                    installation_date = reader.IsDBNull(reader.GetOrdinal("installation_date")) ? null : reader.GetDateTime(reader.GetOrdinal("installation_date")),
-                                    expected_lifetime = reader.GetInt32(reader.GetOrdinal("expected_lifetime")),
-                                    condition = reader.GetString(reader.GetOrdinal("condition")),
-                                    last_inspection_date = reader.IsDBNull(reader.GetOrdinal("last_inspection_date")) ? null : reader.GetDateTime(reader.GetOrdinal("last_inspection_date")),
-                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                    updated_at = reader.IsDBNull(reader.GetOrdinal("updated_at")) ? null : reader.GetDateTime(reader.GetOrdinal("updated_at")),
+                                    asset_name = reader.IsDBNull(reader.GetOrdinal("asset_name")) ? null : reader.GetString(reader.GetOrdinal("asset_name")),
+                                    asset_code = reader.IsDBNull(reader.GetOrdinal("asset_code")) ? null : reader.GetString(reader.GetOrdinal("asset_code")),
+                                    address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                    construction_year = reader.IsDBNull(reader.GetOrdinal("construction_year")) ? null : reader.GetDateTime(reader.GetOrdinal("construction_year")),
+                                    operation_year = reader.IsDBNull(reader.GetOrdinal("operation_year")) ? null : reader.GetDateTime(reader.GetOrdinal("operation_year")),
+                                    land_area = reader.IsDBNull(reader.GetOrdinal("land_area")) ? null : reader.GetDouble(reader.GetOrdinal("land_area")),
+                                    floor_area = reader.IsDBNull(reader.GetOrdinal("floor_area")) ? null : reader.GetDouble(reader.GetOrdinal("floor_area")),
+                                    original_value = reader.IsDBNull(reader.GetOrdinal("original_value")) ? null : reader.GetDouble(reader.GetOrdinal("original_value")),
+                                    remaining_value = reader.IsDBNull(reader.GetOrdinal("remaining_value")) ? null : reader.GetDouble(reader.GetOrdinal("remaining_value")),
+                                    asset_status = reader.IsDBNull(reader.GetOrdinal("asset_status")) ? null : reader.GetString(reader.GetOrdinal("asset_status")),
+                                    installation_unit = reader.IsDBNull(reader.GetOrdinal("installation_unit")) ? null : reader.GetString(reader.GetOrdinal("installation_unit")),
+                                    management_unit = reader.IsDBNull(reader.GetOrdinal("management_unit")) ? null : reader.GetString(reader.GetOrdinal("management_unit")),
+                                    custom_attributes = reader.IsDBNull(reader.GetOrdinal("custom_attributes")) ? null : JObject.Parse(reader.GetString(reader.GetOrdinal("custom_attributes"))),
+                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
                             }
                             return null;
@@ -118,24 +141,33 @@ namespace Road_Infrastructure_Asset_Management.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO assets 
-                (category_id, geometry, attributes, lifecycle_stage, installation_date, expected_lifetime, condition, last_inspection_date, created_at, updated_at)
-                VALUES (@category_id,ST_SetSRID(ST_GeomFromGeoJSON(@geometry),3405), @attributes::jsonb, @lifecycle_stage, @installation_date, @expected_lifetime, @condition, @last_inspection_date, @created_at, @updated_at)
+                (category_id, asset_name, asset_code, address, geometry, construction_year, operation_year, 
+                 land_area, floor_area, original_value, remaining_value, asset_status, installation_unit, 
+                 management_unit, custom_attributes)
+                VALUES (@category_id, @asset_name, @asset_code, @address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), 
+                        @construction_year, @operation_year, @land_area, @floor_area, @original_value, 
+                        @remaining_value, @asset_status, @installation_unit, @management_unit, @custom_attributes::jsonb)
                 RETURNING asset_id";
 
                 try
                 {
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
-                        cmd.Parameters.AddWithValue("@category_id", entity.cagetory_id);
+                        cmd.Parameters.AddWithValue("@category_id", entity.category_id);
+                        cmd.Parameters.AddWithValue("@asset_name", (object)entity.asset_name ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@asset_code", (object)entity.asset_code ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@address", (object)entity.address ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@geometry", JsonConvert.SerializeObject(entity.geometry));
-                        cmd.Parameters.AddWithValue("@attributes", entity.attributes.ToString());
-                        cmd.Parameters.AddWithValue("@lifecycle_stage", entity.lifecycle_stage);
-                        cmd.Parameters.AddWithValue("@installation_date", entity.installation_date ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@expected_lifetime", entity.expected_lifetime);
-                        cmd.Parameters.AddWithValue("@condition", entity.condition);
-                        cmd.Parameters.AddWithValue("@last_inspection_date", entity.last_inspection_date ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@created_at", DateTime.UtcNow);
-                        cmd.Parameters.AddWithValue("@updated_at", DateTime.UtcNow);
+                        cmd.Parameters.AddWithValue("@construction_year", (object)entity.construction_year ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@operation_year", (object)entity.operation_year ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@land_area", (object)entity.land_area ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@floor_area", (object)entity.floor_area ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@original_value", (object)entity.original_value ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@remaining_value", (object)entity.remaining_value ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@asset_status", (object)entity.asset_status ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@installation_unit", (object)entity.installation_unit ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@management_unit", (object)entity.management_unit ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@custom_attributes", entity.custom_attributes.ToString());
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         return await GetAssetById(newId);
                     }
@@ -144,11 +176,15 @@ namespace Road_Infrastructure_Asset_Management.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
-                        throw new InvalidOperationException($"Category ID {entity.cagetory_id} does not exist.", ex);
+                        throw new InvalidOperationException($"Category ID {entity.category_id} does not exist.", ex);
                     }
                     else if (ex.SqlState == "22023") // Invalid GeoJSON
                     {
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
+                    }
+                    else if (ex.SqlState == "23514") // CHECK constraint violation
+                    {
+                        throw new InvalidOperationException("Invalid asset status provided.", ex);
                     }
                     else
                     {
@@ -172,14 +208,20 @@ namespace Road_Infrastructure_Asset_Management.Service
                 var sql = @"
                 UPDATE assets SET
                     category_id = @category_id,
-                    geometry = ST_SetSRID(ST_GeomFromGeoJSON(@geometry),3405),
-                    attributes = @attributes::jsonb,
-                    lifecycle_stage = @lifecycle_stage,
-                    installation_date = @installation_date,
-                    expected_lifetime = @expected_lifetime,
-                    condition = @condition,
-                    last_inspection_date = @last_inspection_date,
-                    updated_at = @updated_at
+                    asset_name = @asset_name,
+                    asset_code = @asset_code,
+                    address = @address,
+                    geometry = ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405),
+                    construction_year = @construction_year,
+                    operation_year = @operation_year,
+                    land_area = @land_area,
+                    floor_area = @floor_area,
+                    original_value = @original_value,
+                    remaining_value = @remaining_value,
+                    asset_status = @asset_status,
+                    installation_unit = @installation_unit,
+                    management_unit = @management_unit,
+                    custom_attributes = @custom_attributes::jsonb
                 WHERE asset_id = @id";
 
                 try
@@ -187,15 +229,21 @@ namespace Road_Infrastructure_Asset_Management.Service
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
                         cmd.Parameters.AddWithValue("@id", id);
-                        cmd.Parameters.AddWithValue("@category_id", entity.cagetory_id);
+                        cmd.Parameters.AddWithValue("@category_id", entity.category_id);
+                        cmd.Parameters.AddWithValue("@asset_name", (object)entity.asset_name ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@asset_code", (object)entity.asset_code ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@address", (object)entity.address ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@geometry", JsonConvert.SerializeObject(entity.geometry));
-                        cmd.Parameters.AddWithValue("@attributes", entity.attributes.ToString());
-                        cmd.Parameters.AddWithValue("@lifecycle_stage", entity.lifecycle_stage);
-                        cmd.Parameters.AddWithValue("@installation_date", entity.installation_date ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@expected_lifetime", entity.expected_lifetime);
-                        cmd.Parameters.AddWithValue("@condition", entity.condition);
-                        cmd.Parameters.AddWithValue("@last_inspection_date", entity.last_inspection_date ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@updated_at", DateTime.UtcNow);
+                        cmd.Parameters.AddWithValue("@construction_year", (object)entity.construction_year ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@operation_year", (object)entity.operation_year ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@land_area", (object)entity.land_area ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@floor_area", (object)entity.floor_area ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@original_value", (object)entity.original_value ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@remaining_value", (object)entity.remaining_value ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@asset_status", (object)entity.asset_status ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@installation_unit", (object)entity.installation_unit ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@management_unit", (object)entity.management_unit ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@custom_attributes", entity.custom_attributes.ToString());
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
                         {
@@ -208,11 +256,15 @@ namespace Road_Infrastructure_Asset_Management.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
-                        throw new InvalidOperationException($"Category ID {entity.cagetory_id} does not exist.", ex);
+                        throw new InvalidOperationException($"Category ID {entity.category_id} does not exist.", ex);
                     }
                     else if (ex.SqlState == "22023") // Invalid GeoJSON
                     {
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
+                    }
+                    else if (ex.SqlState == "23514") // CHECK constraint violation
+                    {
+                        throw new InvalidOperationException("Invalid asset status provided.", ex);
                     }
                     else
                     {
@@ -246,7 +298,7 @@ namespace Road_Infrastructure_Asset_Management.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
-                        throw new InvalidOperationException($"Cannot delete asset with ID {id} because it is referenced by other records (e.g., tasks or incidents).", ex);
+                        throw new InvalidOperationException($"Cannot delete asset with ID {id} because it is referenced by other records.", ex);
                     }
                     throw new InvalidOperationException($"Failed to delete asset with ID {id}.", ex);
                 }
@@ -260,7 +312,7 @@ namespace Road_Infrastructure_Asset_Management.Service
         // Helper methods
         private void ValidateRequest(AssetsRequest entity)
         {
-            if (entity.cagetory_id <= 0)
+            if (entity.category_id <= 0)
             {
                 throw new ArgumentException("Category ID must be a positive integer.");
             }
@@ -276,25 +328,17 @@ namespace Road_Infrastructure_Asset_Management.Service
             {
                 throw new ArgumentException("Invalid GeoJSON format for geometry.", ex);
             }
-            if (string.IsNullOrWhiteSpace(entity.lifecycle_stage))
+            if (entity.custom_attributes == null)
             {
-                throw new ArgumentException("Lifecycle stage cannot be empty.");
-            }
-            if (entity.expected_lifetime < 0)
-            {
-                throw new ArgumentException("Expected lifetime cannot be negative.");
-            }
-            if (string.IsNullOrWhiteSpace(entity.condition))
-            {
-                throw new ArgumentException("Condition cannot be empty.");
+                throw new ArgumentException("Custom attributes cannot be null.");
             }
             try
             {
-                entity.attributes.ToString();
+                entity.custom_attributes.ToString();
             }
             catch (Exception ex)
             {
-                throw new ArgumentException("Invalid JSON format for attributes.", ex);
+                throw new ArgumentException("Invalid JSON format for custom attributes.", ex);
             }
         }
 
@@ -307,18 +351,6 @@ namespace Road_Infrastructure_Asset_Management.Service
             catch (JsonException ex)
             {
                 throw new InvalidOperationException($"Invalid GeoJSON format for {fieldName}.", ex);
-            }
-        }
-
-        private JObject ParseJsonObject(string json, string fieldName)
-        {
-            try
-            {
-                return JObject.Parse(json);
-            }
-            catch (JsonException ex)
-            {
-                throw new InvalidOperationException($"Invalid JSON format for {fieldName}.", ex);
             }
         }
     }

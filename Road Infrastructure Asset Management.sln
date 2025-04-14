@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Road Infrastructure Asset Management", "Road Infrastructure Asset Management.csproj", "{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Road Infrastructure Asset Management2", "Road Infrastructure Asset Management2.csproj", "{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

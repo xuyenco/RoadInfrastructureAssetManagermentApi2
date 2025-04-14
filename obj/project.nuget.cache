@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "eYytzCIoQCo=",
+  "dgSpecHash": "DXT+GfsGWi8=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management\\Road Infrastructure Asset Management.csproj",
+  "projectFilePath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Road Infrastructure Asset Management2.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Lenovo\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\cloudinarydotnet\\1.27.5\\cloudinarydotnet.1.27.5.nupkg.sha512",
@@ -87,7 +87,7 @@
       "code": "NU1603",
       "level": "Warning",
       "warningLevel": 1,
-      "message": "Road Infrastructure Asset Management depends on Proj4Net.Core (>= 1.4.1) but Proj4Net.Core 1.4.1 was not found. An approximate best match of Proj4Net.Core 1.22.501 was resolved.",
+      "message": "Road Infrastructure Asset Management2 depends on Proj4Net.Core (>= 1.4.1) but Proj4Net.Core 1.4.1 was not found. An approximate best match of Proj4Net.Core 1.22.501 was resolved.",
       "libraryId": "Proj4Net.Core",
       "targetGraphs": [
         "net8.0"

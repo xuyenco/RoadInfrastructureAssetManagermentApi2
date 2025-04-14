@@ -4,7 +4,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Road_Infrastructure_Asset_Management.Jwt
+namespace Road_Infrastructure_Asset_Management_2.Jwt
 {
     public class JwtTokenHelper
     {

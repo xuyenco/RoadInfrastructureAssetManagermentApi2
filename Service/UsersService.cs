@@ -1,19 +1,19 @@
 ﻿using Npgsql;
 using BCrypt.Net;
-using Road_Infrastructure_Asset_Management.Interface;
-using Road_Infrastructure_Asset_Management.Model.Request;
-using Road_Infrastructure_Asset_Management.Model.Response;
+using Road_Infrastructure_Asset_Management_2.Interface;
+using Road_Infrastructure_Asset_Management_2.Model.Request;
+using Road_Infrastructure_Asset_Management_2.Model.Response;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Road_Infrastructure_Asset_Management.Jwt;
+using Road_Infrastructure_Asset_Management_2.Jwt;
 
-namespace Road_Infrastructure_Asset_Management.Service
+namespace Road_Infrastructure_Asset_Management_2.Service
 {
     public class UsersService : IUsersService
     {
         private readonly string _connectionString;
-        private static readonly string[] ValidRoles = { "admin", "manager", "technician", "inspector" };
+        private static readonly string[] ValidRoles = { "admin", "manager", "technician", "inspector", "supervisor" };
 
         public UsersService(string connectionString)
         {
@@ -39,11 +39,13 @@ namespace Road_Infrastructure_Asset_Management.Service
                             {
                                 user_id = reader.GetInt32(reader.GetOrdinal("user_id")),
                                 username = reader.GetString(reader.GetOrdinal("username")),
-                                full_name = reader.GetString(reader.GetOrdinal("full_name")),
-                                email = reader.GetString(reader.GetOrdinal("email")),
+                                full_name = reader.IsDBNull(reader.GetOrdinal("full_name")) ? null : reader.GetString(reader.GetOrdinal("full_name")),
+                                email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString(reader.GetOrdinal("email")),
                                 role = reader.GetString(reader.GetOrdinal("role")),
+                                department_company_unit = reader.IsDBNull(reader.GetOrdinal("department_company_unit")) ? null : reader.GetString(reader.GetOrdinal("department_company_unit")),
                                 created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url"))
+                                refresh_token = reader.IsDBNull(reader.GetOrdinal("refresh_token")) ? null : reader.GetString(reader.GetOrdinal("refresh_token")),
+                                refresh_token_expiry = reader.IsDBNull(reader.GetOrdinal("refresh_token_expiry")) ? null : reader.GetDateTime(reader.GetOrdinal("refresh_token_expiry"))
                             };
                             users.Add(user);
                         }
@@ -81,11 +83,13 @@ namespace Road_Infrastructure_Asset_Management.Service
                                 {
                                     user_id = reader.GetInt32(reader.GetOrdinal("user_id")),
                                     username = reader.GetString(reader.GetOrdinal("username")),
-                                    full_name = reader.GetString(reader.GetOrdinal("full_name")),
-                                    email = reader.GetString(reader.GetOrdinal("email")),
+                                    full_name = reader.IsDBNull(reader.GetOrdinal("full_name")) ? null : reader.GetString(reader.GetOrdinal("full_name")),
+                                    email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString(reader.GetOrdinal("email")),
                                     role = reader.GetString(reader.GetOrdinal("role")),
+                                    department_company_unit = reader.IsDBNull(reader.GetOrdinal("department_company_unit")) ? null : reader.GetString(reader.GetOrdinal("department_company_unit")),
                                     created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url"))
+                                    refresh_token = reader.IsDBNull(reader.GetOrdinal("refresh_token")) ? null : reader.GetString(reader.GetOrdinal("refresh_token")),
+                                    refresh_token_expiry = reader.IsDBNull(reader.GetOrdinal("refresh_token_expiry")) ? null : reader.GetDateTime(reader.GetOrdinal("refresh_token_expiry"))
                                 };
                             }
                             return null;
@@ -107,15 +111,15 @@ namespace Road_Infrastructure_Asset_Management.Service
         {
             ValidateRequest(entity, isCreate: true);
 
-            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(entity.password_hash, workFactor: 12);
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(entity.password, workFactor: 12);
 
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO users 
-                (username, password_hash, full_name, email, role,image_url)
-                VALUES (@username, @password_hash, @full_name, @email, @role, @image_url)
+                (username, password, full_name, email, role, department_company_unit)
+                VALUES (@username, @password, @full_name, @email, @role, @department_company_unit)
                 RETURNING user_id";
 
                 try
@@ -123,11 +127,11 @@ namespace Road_Infrastructure_Asset_Management.Service
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
                         cmd.Parameters.AddWithValue("@username", entity.username);
-                        cmd.Parameters.AddWithValue("@password_hash", hashedPassword);
-                        cmd.Parameters.AddWithValue("@full_name", entity.full_name);
-                        cmd.Parameters.AddWithValue("@email", entity.email);
+                        cmd.Parameters.AddWithValue("@password", hashedPassword);
+                        cmd.Parameters.AddWithValue("@full_name", (object)entity.full_name ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@email", (object)entity.email ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@role", entity.role);
-                        cmd.Parameters.AddWithValue("@image_url", entity.image_url);
+                        cmd.Parameters.AddWithValue("@department_company_unit", (object)entity.department_company_unit ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         return await GetUserById(newId);
                     }
@@ -167,37 +171,37 @@ namespace Road_Infrastructure_Asset_Management.Service
                     full_name = @full_name,
                     email = @email,
                     role = @role,
-                    image_url = @image_url
+                    department_company_unit = @department_company_unit
                 WHERE user_id = @id";
 
-                // Nếu password_hash không null hoặc rỗng, cập nhật mật khẩu
-                if (!string.IsNullOrWhiteSpace(entity.password_hash))
+                if (!string.IsNullOrWhiteSpace(entity.password))
                 {
                     sql = @"
                     UPDATE users SET
                         username = @username,
-                        password_hash = @password_hash,
+                        password = @password,
                         full_name = @full_name,
                         email = @email,
                         role = @role,
-                        image_url = @image_url
+                        department_company_unit = @department_company_unit
                     WHERE user_id = @id";
                 }
+
                 try
                 {
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.Parameters.AddWithValue("@username", entity.username);
-                        cmd.Parameters.AddWithValue("@full_name", entity.full_name);
-                        cmd.Parameters.AddWithValue("@email", entity.email);
+                        cmd.Parameters.AddWithValue("@full_name", (object)entity.full_name ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@email", (object)entity.email ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@role", entity.role);
-                        cmd.Parameters.AddWithValue("@image_url", entity.image_url);
+                        cmd.Parameters.AddWithValue("@department_company_unit", (object)entity.department_company_unit ?? DBNull.Value);
 
-                        if (!string.IsNullOrWhiteSpace(entity.password_hash))
+                        if (!string.IsNullOrWhiteSpace(entity.password))
                         {
-                            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(entity.password_hash, workFactor: 12);
-                            cmd.Parameters.AddWithValue("@password_hash", hashedPassword);
+                            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(entity.password, workFactor: 12);
+                            cmd.Parameters.AddWithValue("@password", hashedPassword);
                         }
 
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
@@ -250,7 +254,7 @@ namespace Road_Infrastructure_Asset_Management.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
-                        throw new InvalidOperationException($"Cannot delete user with ID {id} because it is referenced by other records (e.g., tasks or incidents).", ex);
+                        throw new InvalidOperationException($"Cannot delete user with ID {id} because it is referenced by other records (e.g., tasks).", ex);
                     }
                     throw new InvalidOperationException($"Failed to delete user with ID {id}.", ex);
                 }
@@ -283,7 +287,7 @@ namespace Road_Infrastructure_Asset_Management.Service
                         {
                             if (await reader.ReadAsync())
                             {
-                                var storedHash = reader.GetString(reader.GetOrdinal("password_hash"));
+                                var storedHash = reader.GetString(reader.GetOrdinal("password"));
 
                                 if (BCrypt.Net.BCrypt.Verify(user.Password, storedHash))
                                 {
@@ -291,9 +295,10 @@ namespace Road_Infrastructure_Asset_Management.Service
                                     {
                                         user_id = reader.GetInt32(reader.GetOrdinal("user_id")),
                                         username = reader.GetString(reader.GetOrdinal("username")),
-                                        full_name = reader.GetString(reader.GetOrdinal("full_name")),
-                                        email = reader.GetString(reader.GetOrdinal("email")),
+                                        full_name = reader.IsDBNull(reader.GetOrdinal("full_name")) ? null : reader.GetString(reader.GetOrdinal("full_name")),
+                                        email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString(reader.GetOrdinal("email")),
                                         role = reader.GetString(reader.GetOrdinal("role")),
+                                        department_company_unit = reader.IsDBNull(reader.GetOrdinal("department_company_unit")) ? null : reader.GetString(reader.GetOrdinal("department_company_unit")),
                                         created_at = reader.GetDateTime(reader.GetOrdinal("created_at"))
                                     };
 
@@ -320,8 +325,14 @@ namespace Road_Infrastructure_Asset_Management.Service
                 }
             }
         }
+
         public async Task<UsersResponse?> RefreshToken(string refreshToken)
         {
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                throw new ArgumentException("Refresh token is required.");
+            }
+
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
@@ -342,19 +353,21 @@ namespace Road_Infrastructure_Asset_Management.Service
                                 {
                                     user_id = reader.GetInt32(reader.GetOrdinal("user_id")),
                                     username = reader.GetString(reader.GetOrdinal("username")),
-                                    full_name = reader.GetString(reader.GetOrdinal("full_name")),
-                                    email = reader.GetString(reader.GetOrdinal("email")),
+                                    full_name = reader.IsDBNull(reader.GetOrdinal("full_name")) ? null : reader.GetString(reader.GetOrdinal("full_name")),
+                                    email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString(reader.GetOrdinal("email")),
                                     role = reader.GetString(reader.GetOrdinal("role")),
+                                    department_company_unit = reader.IsDBNull(reader.GetOrdinal("department_company_unit")) ? null : reader.GetString(reader.GetOrdinal("department_company_unit")),
                                     created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
                                     refresh_token = reader.GetString(reader.GetOrdinal("refresh_token")),
                                     refresh_token_expiry = reader.GetDateTime(reader.GetOrdinal("refresh_token_expiry"))
                                 };
 
-                                // Tạo refresh token mới (tùy chọn)
+                                // Tạo refresh token mới
                                 var (newRefreshToken, expiry) = JwtTokenHelper.GenerateRefreshToken();
                                 user.refresh_token = newRefreshToken;
                                 user.refresh_token_expiry = expiry;
-                                await UpdateRefreshToken(user.user_id, refreshToken, expiry);
+
+                                await UpdateRefreshToken(user.user_id, newRefreshToken, expiry);
                                 return user;
                             }
                             return null; // Refresh token không hợp lệ hoặc hết hạn
@@ -378,13 +391,25 @@ namespace Road_Infrastructure_Asset_Management.Service
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                var updateSql = "UPDATE users SET refresh_token = @refreshToken, refresh_token_expiry = @expiry WHERE user_id = @userId";
-                using (var cmd = new NpgsqlCommand(updateSql, connection))
+                var sql = "UPDATE users SET refresh_token = @refreshToken, refresh_token_expiry = @expiry WHERE user_id = @userId";
+
+                try
                 {
-                    cmd.Parameters.AddWithValue("@refreshToken", refreshToken);
-                    cmd.Parameters.AddWithValue("@expiry", expiry);
-                    cmd.Parameters.AddWithValue("@userId", userId);
-                    await cmd.ExecuteNonQueryAsync();
+                    using (var cmd = new NpgsqlCommand(sql, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@refreshToken", refreshToken);
+                        cmd.Parameters.AddWithValue("@expiry", expiry);
+                        cmd.Parameters.AddWithValue("@userId", userId);
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    throw new InvalidOperationException($"Failed to update refresh token for user ID {userId}.", ex);
+                }
+                finally
+                {
+                    await connection.CloseAsync();
                 }
             }
         }
@@ -396,17 +421,13 @@ namespace Road_Infrastructure_Asset_Management.Service
             {
                 throw new ArgumentException("Username cannot be empty.");
             }
-            if (isCreate && string.IsNullOrWhiteSpace(entity.password_hash))
+            if (isCreate && string.IsNullOrWhiteSpace(entity.password))
             {
                 throw new ArgumentException("Password cannot be empty when creating a user.");
             }
-            if (string.IsNullOrWhiteSpace(entity.full_name))
+            if (string.IsNullOrWhiteSpace(entity.role))
             {
-                throw new ArgumentException("Full name cannot be empty.");
-            }
-            if (string.IsNullOrWhiteSpace(entity.email))
-            {
-                throw new ArgumentException("Email cannot be empty.");
+                throw new ArgumentException("Role cannot be empty.");
             }
             if (!ValidRoles.Contains(entity.role))
             {

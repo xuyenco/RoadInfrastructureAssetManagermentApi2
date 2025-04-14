@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Road_Infrastructure_Asset_Management.Controllers
+namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
     [ApiController]
     [Route("[controller]")]

@@ -1,8 +1,8 @@
 ﻿using Npgsql;
-using Road_Infrastructure_Asset_Management.Interface;
-using Road_Infrastructure_Asset_Management.Model.Report;
+using Road_Infrastructure_Asset_Management_2.Interface;
+using Road_Infrastructure_Asset_Management_2.Model.Report;
 
-namespace Road_Infrastructure_Asset_Management.Service
+namespace Road_Infrastructure_Asset_Management_2.Service
 {
     public class ReportService : IReportService
     {

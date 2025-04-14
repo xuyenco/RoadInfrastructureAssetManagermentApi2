@@ -4305,11 +4305,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management\\Road Infrastructure Asset Management.csproj",
-      "projectName": "Road Infrastructure Asset Management",
-      "projectPath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management\\Road Infrastructure Asset Management.csproj",
+      "projectUniqueName": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Road Infrastructure Asset Management2.csproj",
+      "projectName": "Road Infrastructure Asset Management2",
+      "projectPath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Road Infrastructure Asset Management2.csproj",
       "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management\\obj\\",
+      "outputPath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Lenovo\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -4413,7 +4413,7 @@
       "code": "NU1603",
       "level": "Warning",
       "warningLevel": 1,
-      "message": "Road Infrastructure Asset Management depends on Proj4Net.Core (>= 1.4.1) but Proj4Net.Core 1.4.1 was not found. An approximate best match of Proj4Net.Core 1.22.501 was resolved.",
+      "message": "Road Infrastructure Asset Management2 depends on Proj4Net.Core (>= 1.4.1) but Proj4Net.Core 1.4.1 was not found. An approximate best match of Proj4Net.Core 1.22.501 was resolved.",
       "libraryId": "Proj4Net.Core",
       "targetGraphs": [
         "net8.0"

@@ -1,4 +1,4 @@
-﻿namespace Road_Infrastructure_Asset_Management.Model.Response
+﻿namespace Road_Infrastructure_Asset_Management_2.Model.Response
 {
     public class IncidentImageResponse
     {

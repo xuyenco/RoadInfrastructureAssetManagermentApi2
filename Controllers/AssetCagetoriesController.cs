@@ -1,25 +1,25 @@
 ﻿using CloudinaryDotNet.Actions;
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Mvc;
-using Road_Infrastructure_Asset_Management.Interface;
-using Road_Infrastructure_Asset_Management.Model.Request;
-using Road_Infrastructure_Asset_Management.Model.ImageUpload;
+using Road_Infrastructure_Asset_Management_2.Interface;
+using Road_Infrastructure_Asset_Management_2.Model.Request;
+using Road_Infrastructure_Asset_Management_2.Model.ImageUpload;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
 
 
-namespace Road_Infrastructure_Asset_Management.Controllers
+namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     //[Authorize]
     public class AssetCagetoriesController : ControllerBase
     {
-        private readonly IAssetCagetoriesService _Service;
+        private readonly IAssetCategoriesService _Service;
         private readonly Cloudinary _Cloudinary;
 
-        public AssetCagetoriesController(IAssetCagetoriesService Service, Cloudinary cloudinary)
+        public AssetCagetoriesController(IAssetCategoriesService Service, Cloudinary cloudinary)
         {
             _Service = Service;
             _Cloudinary = cloudinary;
@@ -30,7 +30,7 @@ namespace Road_Infrastructure_Asset_Management.Controllers
         {
             try
             {
-                var cagetories = await _Service.GetAllAssetCagetories();
+                var cagetories = await _Service.GetAllAssetCategories();
                 return Ok(cagetories);
             }
             catch (Exception ex)
@@ -44,7 +44,7 @@ namespace Road_Infrastructure_Asset_Management.Controllers
         {
             try
             {
-                var category = await _Service.GetAssetCagetoriesByid(id);
+                var category = await _Service.GetAssetCategoriesById(id);
                 if (category == null)
                 {
                     return NotFound("Asset category does not exist");
@@ -107,21 +107,20 @@ namespace Road_Infrastructure_Asset_Management.Controllers
                 // Lấy URL ảnh từ Cloudinary
                 var imageUrl = uploadResult.SecureUrl.ToString();
                 // Gắn URL ảnh vào request
-                var finalRequest = new AssetCagetoriesRequest
+                var finalRequest = new AssetCategoriesRequest
                 {
-                    cagetory_name = request.cagetory_name,
-                    attributes_schema = attributesSchema,
+                    category_name = request.cagetory_name,
+                    attribute_schema = attributesSchema,
                     geometry_type = request.geometry_type,
-                    lifecycle_stages = lifecycleStages,
-                    marker_url = imageUrl,
+                    sample_image = imageUrl,
                 };
 
-                var category = await _Service.CreateAssetCagetories(finalRequest);
+                var category = await _Service.CreateAssetCategories(finalRequest);
                 if (category == null)
                 {
                     return BadRequest("Failed to create asset category.");
                 }
-                return CreatedAtAction(nameof(GetAssetCagetoriesById), new { id = category.cagetory_id }, category);
+                return CreatedAtAction(nameof(GetAssetCagetoriesById), new { id = category.category_id }, category);
             }
             catch (ArgumentException ex)
             {
@@ -167,21 +166,21 @@ namespace Road_Infrastructure_Asset_Management.Controllers
             try
             {
                 // Lấy danh mục hiện tại để kiểm tra marker_url cũ
-                var existingCategory = await _Service.GetAssetCagetoriesByid(id);
+                var existingCategory = await _Service.GetAssetCategoriesById(id);
                 if (existingCategory == null)
                 {
                     return NotFound("Asset category does not exist");
                 }
 
-                string imageUrl = existingCategory.marker_url; // Giữ URL cũ nếu không có ảnh mới
+                string imageUrl = existingCategory.sample_image; // Giữ URL cũ nếu không có ảnh mới
 
                 // Nếu có file marker mới, xử lý xóa ảnh cũ và tải ảnh mới
                 if (request.marker != null && request.marker.Length > 0)
                 {
                     // Xóa ảnh cũ trên Cloudinary nếu tồn tại
-                    if (!string.IsNullOrEmpty(existingCategory.marker_url))
+                    if (!string.IsNullOrEmpty(existingCategory.sample_image))
                     {
-                        var publicId = Path.GetFileNameWithoutExtension(new Uri(existingCategory.marker_url).AbsolutePath);
+                        var publicId = Path.GetFileNameWithoutExtension(new Uri(existingCategory.sample_image).AbsolutePath);
                         var deletionParams = new DeletionParams(publicId);
                         var deletionResult = await _Cloudinary.DestroyAsync(deletionParams);
                         if (deletionResult.Result != "ok")
@@ -208,16 +207,15 @@ namespace Road_Infrastructure_Asset_Management.Controllers
                 // Nếu không có file marker mới, giữ nguyên marker_url cũ
 
                 // Tạo request để cập nhật
-                var finalRequest = new AssetCagetoriesRequest
+                var finalRequest = new AssetCategoriesRequest
                 {
-                    cagetory_name = request.cagetory_name,
-                    attributes_schema = attributesSchema,
+                    category_name = request.cagetory_name,
+                    attribute_schema = attributesSchema,
                     geometry_type = request.geometry_type,
-                    lifecycle_stages = lifecycleStages,
-                    marker_url = imageUrl // Dùng URL mới hoặc giữ URL cũ
+                    sample_image = imageUrl,
                 };
 
-                var updatedCategory = await _Service.UpdateAssetCagetories(id, finalRequest);
+                var updatedCategory = await _Service.UpdateAssetCategories(id, finalRequest);
                 if (updatedCategory == null)
                 {
                     return BadRequest("Failed to update asset category.");
@@ -243,13 +241,13 @@ namespace Road_Infrastructure_Asset_Management.Controllers
         {
             try
             {
-                var existingCategory = await _Service.GetAssetCagetoriesByid(id);
+                var existingCategory = await _Service.GetAssetCategoriesById(id);
                 if (existingCategory == null)
                 {
                     return NotFound("Asset category does not exist");
                 }
 
-                var result = await _Service.DeleteAssetCagetories(id);
+                var result = await _Service.DeleteAssetCategories(id);
                 if (!result)
                 {
                     return BadRequest("Failed to delete asset category.");

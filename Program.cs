@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using Road_Infrastructure_Asset_Management.Interface;
-using Road_Infrastructure_Asset_Management.Service;
+using Road_Infrastructure_Asset_Management_2.Interface;
+using Road_Infrastructure_Asset_Management_2.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -72,11 +72,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton(connectionString);
 
 //DI
-builder.Services.AddScoped<IAssetCagetoriesService, AssetCagetoriesService>();
+builder.Services.AddScoped<IAssetCategoriesService, AssetCategoriesService>();
 builder.Services.AddScoped<IAssetsService,AssetsService>();
 builder.Services.AddScoped<IBudgetsService,BudgetsService>();
 builder.Services.AddScoped<ICostsService,CostsService>();
-builder.Services.AddScoped<IIncidentHistoryService,IncidentHistoryService>();
 builder.Services.AddScoped<IIncidentsService, IncidentService>();
 builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<IUsersService, UsersService>();

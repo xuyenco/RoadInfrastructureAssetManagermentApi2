@@ -1,29 +1,27 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using Npgsql;
-using Road_Infrastructure_Asset_Management.Interface;
-using Road_Infrastructure_Asset_Management.Model.Request;
-using Road_Infrastructure_Asset_Management.Model.Response;
+using Road_Infrastructure_Asset_Management_2.Interface;
+using Road_Infrastructure_Asset_Management_2.Model.Request;
+using Road_Infrastructure_Asset_Management_2.Model.Response;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Threading.Tasks;
 
-namespace Road_Infrastructure_Asset_Management.Service
+namespace Road_Infrastructure_Asset_Management_2.Service
 {
-    public class AssetCagetoriesService : IAssetCagetoriesService
+    public class AssetCategoriesService : IAssetCategoriesService
     {
         private readonly string _connectionString;
-        private static readonly string[] ValidGeometryTypes = { "point", "line", "polygon" };
+        private static readonly string[] ValidGeometryTypes = { "point", "linestring", "polygon" };
 
-        public AssetCagetoriesService(string connectionString)
+        public AssetCategoriesService(string connectionString)
         {
             _connectionString = connectionString;
         }
 
-        public async Task<IEnumerable<AssetCagetoriesResponse>> GetAllAssetCagetories()
+        public async Task<IEnumerable<AssetCategoriesResponse>> GetAllAssetCategories()
         {
-            var assetCategories = new List<AssetCagetoriesResponse>();
+            var assetCategories = new List<AssetCategoriesResponse>();
 
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
@@ -37,16 +35,20 @@ namespace Road_Infrastructure_Asset_Management.Service
                     {
                         while (await reader.ReadAsync())
                         {
-                            var category = new AssetCagetoriesResponse
+                            var category = new AssetCategoriesResponse
                             {
-                                cagetory_id = reader.GetInt32(reader.GetOrdinal("category_id")),
-                                cagetory_name = reader.GetString(reader.GetOrdinal("category_name")),
+                                category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
+                                category_name = reader.GetString(reader.GetOrdinal("category_name")),
                                 geometry_type = reader.GetString(reader.GetOrdinal("geometry_type")),
-                                attributes_schema = ParseJsonObject(reader.GetString("attributes_schema"), "attributes_schema"),
-                                lifecycle_stages = ParseJsonArray(reader.GetString("lifecycle_stages"), "lifecycle_stages"),
-                                created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ?
-                                    null : reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                marker_url = reader.IsDBNull(reader.GetOrdinal("marker_url")) ? null : reader.GetString(reader.GetOrdinal("marker_url"))
+                                attribute_schema = reader.IsDBNull(reader.GetOrdinal("attribute_schema"))
+                                    ? null
+                                    : JObject.Parse(reader.GetString(reader.GetOrdinal("attribute_schema"))),
+                                sample_image = reader.IsDBNull(reader.GetOrdinal("sample_image"))
+                                    ? null
+                                    : reader.GetString(reader.GetOrdinal("sample_image")),
+                                created_at = reader.IsDBNull(reader.GetOrdinal("created_at"))
+                                    ? null
+                                    : reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             assetCategories.Add(category);
                         }
@@ -64,7 +66,7 @@ namespace Road_Infrastructure_Asset_Management.Service
             }
         }
 
-        public async Task<AssetCagetoriesResponse?> GetAssetCagetoriesByid(int id)
+        public async Task<AssetCategoriesResponse?> GetAssetCategoriesById(int id)
         {
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
@@ -80,16 +82,20 @@ namespace Road_Infrastructure_Asset_Management.Service
                         {
                             if (await reader.ReadAsync())
                             {
-                                return new AssetCagetoriesResponse
+                                return new AssetCategoriesResponse
                                 {
-                                    cagetory_id = reader.GetInt32(reader.GetOrdinal("category_id")),
-                                    cagetory_name = reader.GetString(reader.GetOrdinal("category_name")),
+                                    category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
+                                    category_name = reader.GetString(reader.GetOrdinal("category_name")),
                                     geometry_type = reader.GetString(reader.GetOrdinal("geometry_type")),
-                                    attributes_schema = ParseJsonObject(reader.GetString("attributes_schema"), "attributes_schema"),
-                                    lifecycle_stages = ParseJsonArray(reader.GetString("lifecycle_stages"), "lifecycle_stages"),
-                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ?
-                                        null : reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                    marker_url = reader.IsDBNull(reader.GetOrdinal("marker_url")) ? null : reader.GetString(reader.GetOrdinal("marker_url"))
+                                    attribute_schema = reader.IsDBNull(reader.GetOrdinal("attribute_schema"))
+                                        ? null
+                                        : JObject.Parse(reader.GetString(reader.GetOrdinal("attribute_schema"))),
+                                    sample_image = reader.IsDBNull(reader.GetOrdinal("sample_image"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("sample_image")),
+                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at"))
+                                        ? null
+                                        : reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
                             }
                             return null;
@@ -107,7 +113,7 @@ namespace Road_Infrastructure_Asset_Management.Service
             }
         }
 
-        public async Task<AssetCagetoriesResponse?> CreateAssetCagetories(AssetCagetoriesRequest entity)
+        public async Task<AssetCategoriesResponse?> CreateAssetCategories(AssetCategoriesRequest entity)
         {
             ValidateRequest(entity);
 
@@ -116,28 +122,27 @@ namespace Road_Infrastructure_Asset_Management.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO asset_categories 
-                (category_name, geometry_type, attributes_schema, lifecycle_stages,marker_url)
-                VALUES (@name, @geomType, @attrsSchema::jsonb, @lifecycle::jsonb,@marker_url)
+                (category_name, geometry_type, attribute_schema, sample_image)
+                VALUES (@name, @geomType, @attrsSchema::jsonb, @sampleImage)
                 RETURNING category_id";
 
                 try
                 {
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
-                        cmd.Parameters.AddWithValue("@name", entity.cagetory_name);
+                        cmd.Parameters.AddWithValue("@name", entity.category_name);
                         cmd.Parameters.AddWithValue("@geomType", entity.geometry_type);
-                        cmd.Parameters.AddWithValue("@attrsSchema", entity.attributes_schema.ToString());
-                        cmd.Parameters.AddWithValue("@lifecycle", entity.lifecycle_stages.ToString());
-                        cmd.Parameters.AddWithValue("@marker_url", entity.marker_url);
+                        cmd.Parameters.AddWithValue("@attrsSchema", entity.attribute_schema.ToString());
+                        cmd.Parameters.AddWithValue("@sampleImage", (object)entity.sample_image ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
-                        return await GetAssetCagetoriesByid(newId);
+                        return await GetAssetCategoriesById(newId);
                     }
                 }
                 catch (NpgsqlException ex)
                 {
                     if (ex.SqlState == "23505") // UNIQUE constraint violation
                     {
-                        throw new InvalidOperationException($"Category name '{entity.cagetory_name}' already exists.", ex);
+                        throw new InvalidOperationException($"Category name '{entity.category_name}' already exists.", ex);
                     }
                     else if (ex.SqlState == "23514") // CHECK constraint violation
                     {
@@ -155,7 +160,7 @@ namespace Road_Infrastructure_Asset_Management.Service
             }
         }
 
-        public async Task<AssetCagetoriesResponse?> UpdateAssetCagetories(int id, AssetCagetoriesRequest entity)
+        public async Task<AssetCategoriesResponse?> UpdateAssetCategories(int id, AssetCategoriesRequest entity)
         {
             ValidateRequest(entity);
 
@@ -166,9 +171,8 @@ namespace Road_Infrastructure_Asset_Management.Service
                 UPDATE asset_categories SET
                     category_name = @name,
                     geometry_type = @geomType,
-                    attributes_schema = @attrsSchema::jsonb,
-                    lifecycle_stages = @lifecycle::jsonb,
-                    marker_url = @marker_url
+                    attribute_schema = @attrsSchema::jsonb,
+                    sample_image = @sampleImage
                 WHERE category_id = @id";
 
                 try
@@ -176,16 +180,15 @@ namespace Road_Infrastructure_Asset_Management.Service
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
                         cmd.Parameters.AddWithValue("@id", id);
-                        cmd.Parameters.AddWithValue("@name", entity.cagetory_name);
+                        cmd.Parameters.AddWithValue("@name", entity.category_name);
                         cmd.Parameters.AddWithValue("@geomType", entity.geometry_type);
-                        cmd.Parameters.AddWithValue("@attrsSchema", entity.attributes_schema.ToString());
-                        cmd.Parameters.AddWithValue("@lifecycle", entity.lifecycle_stages.ToString());
-                        cmd.Parameters.AddWithValue("@marker_url", entity.marker_url);
+                        cmd.Parameters.AddWithValue("@attrsSchema", entity.attribute_schema.ToString());
+                        cmd.Parameters.AddWithValue("@sampleImage", (object)entity.sample_image ?? DBNull.Value);
 
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
                         {
-                            return await GetAssetCagetoriesByid(id);
+                            return await GetAssetCategoriesById(id);
                         }
                         return null;
                     }
@@ -194,7 +197,7 @@ namespace Road_Infrastructure_Asset_Management.Service
                 {
                     if (ex.SqlState == "23505") // UNIQUE constraint violation
                     {
-                        throw new InvalidOperationException($"Category name '{entity.cagetory_name}' already exists.", ex);
+                        throw new InvalidOperationException($"Category name '{entity.category_name}' already exists.", ex);
                     }
                     else if (ex.SqlState == "23514") // CHECK constraint violation
                     {
@@ -212,7 +215,7 @@ namespace Road_Infrastructure_Asset_Management.Service
             }
         }
 
-        public async Task<bool> DeleteAssetCagetories(int id)
+        public async Task<bool> DeleteAssetCategories(int id)
         {
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
@@ -244,9 +247,9 @@ namespace Road_Infrastructure_Asset_Management.Service
         }
 
         // Helper methods
-        private void ValidateRequest(AssetCagetoriesRequest entity)
+        private void ValidateRequest(AssetCategoriesRequest entity)
         {
-            if (string.IsNullOrWhiteSpace(entity.cagetory_name))
+            if (string.IsNullOrWhiteSpace(entity.category_name))
             {
                 throw new ArgumentException("Category name cannot be empty.");
             }
@@ -256,36 +259,11 @@ namespace Road_Infrastructure_Asset_Management.Service
             }
             try
             {
-                entity.attributes_schema.ToString();
-                entity.lifecycle_stages.ToString();
+                entity.attribute_schema.ToString();
             }
             catch (Exception ex)
             {
-                throw new ArgumentException("Invalid JSON format for attributes_schema or lifecycle_stages.", ex);
-            }
-        }
-
-        private JObject ParseJsonObject(string json, string fieldName)
-        {
-            try
-            {
-                return JObject.Parse(json);
-            }
-            catch (JsonException ex)
-            {
-                throw new InvalidOperationException($"Invalid JSON format for {fieldName}.", ex);
-            }
-        }
-
-        private JArray ParseJsonArray(string json, string fieldName)
-        {
-            try
-            {
-                return JArray.Parse(json);
-            }
-            catch (JsonException ex)
-            {
-                throw new InvalidOperationException($"Invalid JSON format for {fieldName}.", ex);
+                throw new ArgumentException("Invalid JSON format for attribute_schema.", ex);
             }
         }
     }

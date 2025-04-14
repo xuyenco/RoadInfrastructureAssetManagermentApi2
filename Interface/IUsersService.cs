@@ -1,7 +1,7 @@
-﻿using Road_Infrastructure_Asset_Management.Model.Request;
-using Road_Infrastructure_Asset_Management.Model.Response;
+﻿using Road_Infrastructure_Asset_Management_2.Model.Request;
+using Road_Infrastructure_Asset_Management_2.Model.Response;
 
-namespace Road_Infrastructure_Asset_Management.Interface
+namespace Road_Infrastructure_Asset_Management_2.Interface
 {
     public interface IUsersService
     {
