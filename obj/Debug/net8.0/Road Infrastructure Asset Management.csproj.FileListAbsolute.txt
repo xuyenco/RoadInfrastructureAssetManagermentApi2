@@ -46,3 +46,8 @@ C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management\bin\Debug\net8
 C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
 C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management\obj\Debug\net8.0\Road Infrastructure Asset Management.sourcelink.json
+C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management\bin\Debug\net8.0\CloudinaryDotNet.dll
+C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management\bin\Debug\net8.0\dotenv.net.dll
+C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management\bin\Debug\net8.0\CoordinateSharp.dll
+C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management\bin\Debug\net8.0\Proj4Net.Core.dll

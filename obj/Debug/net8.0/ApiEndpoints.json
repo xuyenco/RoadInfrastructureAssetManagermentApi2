@@ -18,9 +18,29 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.AssetCagetoriesRequest",
-        "IsRequired": true
+        "Name": "cagetory_name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "geometry_type",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "attributes_schema",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "lifecycle_stages",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "marker",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -50,14 +70,34 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.AssetCagetoriesRequest",
-        "IsRequired": true
-      },
-      {
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "cagetory_name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "geometry_type",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "attributes_schema",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "lifecycle_stages",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "marker",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -129,13 +169,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.AssetsRequest",
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       },
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "request",
+        "Type": "Road_Infrastructure_Asset_Management.Model.Request.AssetsRequest",
         "IsRequired": true
       }
     ],
@@ -208,13 +248,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.BudgetsRequest",
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       },
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "request",
+        "Type": "Road_Infrastructure_Asset_Management.Model.Request.BudgetsRequest",
         "IsRequired": true
       }
     ],
@@ -287,13 +327,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.CostsRequest",
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       },
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "request",
+        "Type": "Road_Infrastructure_Asset_Management.Model.Request.CostsRequest",
         "IsRequired": true
       }
     ],
@@ -343,7 +383,7 @@
   },
   {
     "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.IncidentHistoryController",
-    "Method": "GetIncidentHistoryById",
+    "Method": "GetIncidentHistoryByIncidentId",
     "RelativePath": "api/IncidentHistory/{id}",
     "HttpMethod": "GET",
     "IsController": true,
@@ -366,13 +406,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.IncidentHistoryRequest",
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       },
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "request",
+        "Type": "Road_Infrastructure_Asset_Management.Model.Request.IncidentHistoryRequest",
         "IsRequired": true
       }
     ],
@@ -383,6 +423,127 @@
     "Method": "DeleteIncidentHistory",
     "RelativePath": "api/IncidentHistory/{id}",
     "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.IncidentHistoryController",
+    "Method": "GetIncidentHistoryById",
+    "RelativePath": "api/IncidentHistory/incidentid/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.IncidentImagesController",
+    "Method": "GetAllIncidentImages",
+    "RelativePath": "api/IncidentImages",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.IncidentImagesController",
+    "Method": "CreateIncidentImages",
+    "RelativePath": "api/IncidentImages",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "incident_id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "image",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.IncidentImagesController",
+    "Method": "GetIncidentImagesById",
+    "RelativePath": "api/IncidentImages/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.IncidentImagesController",
+    "Method": "UpdateIncidentImages",
+    "RelativePath": "api/IncidentImages/{id}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "incident_id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "image",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.IncidentImagesController",
+    "Method": "DeleteIncidentImages",
+    "RelativePath": "api/IncidentImages/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.IncidentImagesController",
+    "Method": "GetAllIncidentImagesByIncidentId",
+    "RelativePath": "api/IncidentImages/incidentid/{id}",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -445,13 +606,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.IncidentsRequest",
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       },
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "request",
+        "Type": "Road_Infrastructure_Asset_Management.Model.Request.IncidentsRequest",
         "IsRequired": true
       }
     ],
@@ -471,6 +632,66 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.ReportController",
+    "Method": "GetAssetDistributedByCondition",
+    "RelativePath": "api/Report/AssetDistributedByCondition",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.ReportController",
+    "Method": "GetAssetDistributionByCategories",
+    "RelativePath": "api/Report/AssetDistributionByCategories",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.ReportController",
+    "Method": "GetBudgetAndCosts",
+    "RelativePath": "api/Report/BudgetAndCosts",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.ReportController",
+    "Method": "GetIncidentsOverTime",
+    "RelativePath": "api/Report/IncidentsOverTime",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.ReportController",
+    "Method": "GetIncidentTypeDistribution",
+    "RelativePath": "api/Report/IncidentTypeDistribution",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.ReportController",
+    "Method": "GetTaskStatusDistribution",
+    "RelativePath": "api/Report/TaskStatusDistribution",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -524,13 +745,13 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.TasksRequest",
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       },
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "request",
+        "Type": "Road_Infrastructure_Asset_Management.Model.Request.TasksRequest",
         "IsRequired": true
       }
     ],
@@ -571,9 +792,34 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.UsersRequest",
-        "IsRequired": true
+        "Name": "username",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "password_hash",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "full_name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "email",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "role",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "image",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -603,9 +849,34 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "Road_Infrastructure_Asset_Management.Model.Request.UsersRequest",
-        "IsRequired": true
+        "Name": "username",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "password_hash",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "full_name",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "email",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "role",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "image",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
       },
       {
         "Name": "id",
@@ -640,8 +911,24 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "userinput",
+        "Name": "userInput",
         "Type": "Road_Infrastructure_Asset_Management.Model.Request.LoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management.Controllers.UsersController",
+    "Method": "RefreshToken",
+    "RelativePath": "api/Users/refresh",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Road_Infrastructure_Asset_Management.Model.Request.RefreshTokenRequest",
         "IsRequired": true
       }
     ],

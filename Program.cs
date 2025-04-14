@@ -1,4 +1,4 @@
-using Npgsql;
+﻿using Npgsql;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -7,6 +7,8 @@ using Road_Infrastructure_Asset_Management.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using CloudinaryDotNet;
+using dotenv.net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,7 +80,21 @@ builder.Services.AddScoped<IIncidentHistoryService,IncidentHistoryService>();
 builder.Services.AddScoped<IIncidentsService, IncidentService>();
 builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<IUsersService, UsersService>();
+builder.Services.AddScoped<IIncidentImageService, IncidentImageService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
+
+// Set up Cloudinary
+DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
+builder.Services.AddSingleton(new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL")));
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true; // Tắt kiểm tra ModelState tự động
+});
+
+//Set NewtonSoft as default
+builder.Services.AddControllers().AddNewtonsoftJson();
 
 var app = builder.Build();
 

@@ -7,6 +7,7 @@ namespace Road_Infrastructure_Asset_Management.Interface
     {
         Task<IEnumerable<IncidentHistoryResponse>> GetAllIncidentHistory();
         Task<IncidentHistoryResponse?> GetIncidentHistoryById(int id);
+        Task<IEnumerable<IncidentHistoryResponse>> GetIncidentHistoryByIncidentID(int id);
         Task<IncidentHistoryResponse?> CreateIncidentHistory(IncidentHistoryRequest entity);
         Task<IncidentHistoryResponse?> UpdateIncidentHistory(int id, IncidentHistoryRequest entity);
         Task<bool> DeleteIncidentHistory(int id);

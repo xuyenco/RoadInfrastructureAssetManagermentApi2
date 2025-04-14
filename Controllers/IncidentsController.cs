@@ -1,77 +1,156 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Road_Infrastructure_Asset_Management.Interface;
 using Road_Infrastructure_Asset_Management.Model.Request;
+using System;
+using System.Threading.Tasks;
 
 namespace Road_Infrastructure_Asset_Management.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class IncidentsController : ControllerBase
     {
         private readonly IIncidentsService _Service;
+
         public IncidentsController(IIncidentsService Service)
         {
             _Service = Service;
         }
+
         [HttpGet]
         public async Task<ActionResult> GetAllIncidents()
         {
-            return Ok(await _Service.GetAllIncidents());
+            try
+            {
+                var incidents = await _Service.GetAllIncidents();
+                return Ok(incidents);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception if logging is configured
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
+
         [HttpGet("{id}")]
         public async Task<ActionResult> GetIncidentsById(int id)
         {
-            var budgets = await _Service.GetIncidentById(id);
-            if (budgets == null)
+            try
             {
-                return NotFound("Incidents does't exist");
+                var incident = await _Service.GetIncidentById(id);
+                if (incident == null)
+                {
+                    return NotFound("Incident does not exist");
+                }
+                return Ok(incident);
             }
-            return Ok(budgets);
+            catch (Exception ex)
+            {
+                // Log the exception if logging is configured
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateIncidents(IncidentsRequest request)
+        public async Task<ActionResult> CreateIncidents([FromBody] IncidentsRequest request)
         {
-            var budget = await _Service.CreateIncident(request);
-            if (budget == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(ModelState);
             }
-            return Ok(budget);
+
+            try
+            {
+                var incident = await _Service.CreateIncident(request);
+                return CreatedAtAction(nameof(GetIncidentsById), new { id = incident.incident_id }, incident);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception if logging is configured
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult> UpdateIncidents(IncidentsRequest request, int id)
+        public async Task<ActionResult> UpdateIncidents(int id, [FromBody] IncidentsRequest request)
         {
-            var budget = await _Service.GetIncidentById(id);
-            if (budget == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                return BadRequest(ModelState);
             }
-            var newbudget = await _Service.UpdateIncident(id, request);
-            if (newbudget == null)
+
+            try
             {
-                return BadRequest();
+                var existingIncident = await _Service.GetIncidentById(id);
+                if (existingIncident == null)
+                {
+                    return NotFound("Incident does not exist");
+                }
+
+                var updatedIncident = await _Service.UpdateIncident(id, request);
+                if (updatedIncident == null)
+                {
+                    return BadRequest("Failed to update incident.");
+                }
+                return Ok(updatedIncident); // Or return NoContent() if no data is needed
             }
-            return Ok(newbudget);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception if logging is configured
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteIncidents(int id)
         {
-            var budget = await _Service.GetIncidentById(id);
-            if (budget == null)
+            try
             {
-                return NotFound();
-            }
-            var result = await _Service.DeleteIncident(id);
-            if (result != true)
-            {
-                return BadRequest();
-            }
-            return NoContent();
+                var existingIncident = await _Service.GetIncidentById(id);
+                if (existingIncident == null)
+                {
+                    return NotFound("Incident does not exist");
+                }
 
+                var result = await _Service.DeleteIncident(id);
+                if (!result)
+                {
+                    return BadRequest("Failed to delete incident.");
+                }
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("referenced by other records"))
+                {
+                    return Conflict(ex.Message); // 409 Conflict for foreign key issues
+                }
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception if logging is configured
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
     }
 }

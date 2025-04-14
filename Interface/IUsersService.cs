@@ -11,5 +11,6 @@ namespace Road_Infrastructure_Asset_Management.Interface
         Task<UsersResponse?> UpdateUser(int id, UsersRequest entity);
         Task<bool> DeleteUser(int id);
         Task<UsersResponse?> Login(LoginRequest user);
+        Task<UsersResponse?> RefreshToken(string refreshToken);
     }
 }

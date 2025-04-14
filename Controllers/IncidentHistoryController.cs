@@ -1,77 +1,168 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Road_Infrastructure_Asset_Management.Interface;
 using Road_Infrastructure_Asset_Management.Model.Request;
+using System;
+using System.Threading.Tasks;
 
 namespace Road_Infrastructure_Asset_Management.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class IncidentHistoryController : ControllerBase
     {
         private readonly IIncidentHistoryService _Service;
+
         public IncidentHistoryController(IIncidentHistoryService Service)
         {
             _Service = Service;
         }
+
         [HttpGet]
         public async Task<ActionResult> GetAllIncidentHistory()
         {
-            return Ok(await _Service.GetAllIncidentHistory());
+            try
+            {
+                var histories = await _Service.GetAllIncidentHistory();
+                return Ok(histories);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
-        [HttpGet("{id}")]
+
+        [HttpGet("incidentid/{id}")]
         public async Task<ActionResult> GetIncidentHistoryById(int id)
         {
-            var incident_history = await _Service.GetIncidentHistoryById(id);
-            if (incident_history == null)
+            try
             {
-                return NotFound("Budgets does't exist");
+                var histories = await _Service.GetIncidentHistoryByIncidentID(id);
+                return Ok(histories);
             }
-            return Ok(incident_history);
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+        [HttpGet("{id}")]
+        public async Task<ActionResult> GetIncidentHistoryByIncidentId(int id)
+        {
+            try
+            {
+                var history = await _Service.GetIncidentHistoryById(id);
+                if (history == null)
+                {
+                    return NotFound("Incident history does not exist");
+                }
+                return Ok(history);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateIncidentHistory(IncidentHistoryRequest request)
+        public async Task<ActionResult> CreateIncidentHistory([FromBody] IncidentHistoryRequest request)
         {
-            var incident_history = await _Service.CreateIncidentHistory(request);
-            if (incident_history == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(ModelState);
             }
-            return Ok(incident_history);
+
+            try
+            {
+                var history = await _Service.CreateIncidentHistory(request);
+                if (history == null)
+                {
+                    return BadRequest("Failed to create incident history.");
+                }
+                return CreatedAtAction(nameof(GetIncidentHistoryById), new { id = history.history_id }, history);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult> UpdateIncidentHistory(IncidentHistoryRequest request, int id)
+        public async Task<ActionResult> UpdateIncidentHistory(int id, [FromBody] IncidentHistoryRequest request)
         {
-            var incident_history = await _Service.GetIncidentHistoryById(id);
-            if (incident_history == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                return BadRequest(ModelState);
             }
-            var newincident_history = await _Service.UpdateIncidentHistory(id, request);
-            if (newincident_history == null)
+
+            try
             {
-                return BadRequest();
+                var existingHistory = await _Service.GetIncidentHistoryById(id);
+                if (existingHistory == null)
+                {
+                    return NotFound("Incident history does not exist");
+                }
+
+                var updatedHistory = await _Service.UpdateIncidentHistory(id, request);
+                if (updatedHistory == null)
+                {
+                    return BadRequest("Failed to update incident history.");
+                }
+                return Ok(updatedHistory); // Hoặc NoContent() nếu không cần trả dữ liệu
             }
-            return Ok(newincident_history);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteIncidentHistory(int id)
         {
-            var incident_history = await _Service.GetIncidentHistoryById(id);
-            if (incident_history == null)
+            try
             {
-                return NotFound();
-            }
-            var result = await _Service.DeleteIncidentHistory(id);
-            if (result != true)
-            {
-                return BadRequest();
-            }
-            return NoContent();
+                var existingHistory = await _Service.GetIncidentHistoryById(id);
+                if (existingHistory == null)
+                {
+                    return NotFound("Incident history does not exist");
+                }
 
+                var result = await _Service.DeleteIncidentHistory(id);
+                if (!result)
+                {
+                    return BadRequest("Failed to delete incident history.");
+                }
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("referenced by other records"))
+                {
+                    return Conflict(ex.Message);
+                }
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
     }
 }

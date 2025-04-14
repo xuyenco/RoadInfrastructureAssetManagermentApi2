@@ -1,77 +1,160 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Road_Infrastructure_Asset_Management.Interface;
 using Road_Infrastructure_Asset_Management.Model.Request;
+using System;
+using System.Threading.Tasks;
 
 namespace Road_Infrastructure_Asset_Management.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class TasksController : ControllerBase
     {
         private readonly ITasksService _Service;
+
         public TasksController(ITasksService Service)
         {
             _Service = Service;
         }
+
         [HttpGet]
         public async Task<ActionResult> GetAllTasks()
         {
-            return Ok(await _Service.GetAllTasks());
+            try
+            {
+                var tasks = await _Service.GetAllTasks();
+                return Ok(tasks);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nếu cần
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
+
         [HttpGet("{id}")]
         public async Task<ActionResult> GetTaskById(int id)
         {
-            var tasks = await _Service.GetTaskById(id);
-            if (tasks == null)
+            try
             {
-                return NotFound("Budgets does't exist");
+                var task = await _Service.GetTaskById(id);
+                if (task == null)
+                {
+                    return NotFound("Task does not exist");
+                }
+                return Ok(task);
             }
-            return Ok(tasks);
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nếu cần
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateTask(TasksRequest request)
+        public async Task<ActionResult> CreateTask([FromBody] TasksRequest request)
         {
-            var task = await _Service.CreateTask(request);
-            if (task == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(ModelState);
             }
-            return Ok(task);
+
+            try
+            {
+                var task = await _Service.CreateTask(request);
+                if (task == null)
+                {
+                    return BadRequest("Failed to create task.");
+                }
+                return CreatedAtAction(nameof(GetTaskById), new { id = task.task_id }, task);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nếu cần
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult> UpdateTask(TasksRequest request, int id)
+        public async Task<ActionResult> UpdateTask(int id, [FromBody] TasksRequest request)
         {
-            var task = await _Service.GetTaskById(id);
-            if (task == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                return BadRequest(ModelState);
             }
-            var newtask = await _Service.UpdateTask(id, request);
-            if (newtask == null)
+
+            try
             {
-                return BadRequest();
+                var existingTask = await _Service.GetTaskById(id);
+                if (existingTask == null)
+                {
+                    return NotFound("Task does not exist");
+                }
+
+                var updatedTask = await _Service.UpdateTask(id, request);
+                if (updatedTask == null)
+                {
+                    return BadRequest("Failed to update task.");
+                }
+                return Ok(updatedTask); // Hoặc NoContent() nếu không cần trả về dữ liệu
             }
-            return Ok(newtask);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nếu cần
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteTask(int id)
         {
-            var task = await _Service.GetTaskById(id);
-            if (task == null)
+            try
             {
-                return NotFound();
-            }
-            var result = await _Service.DeleteTask(id);
-            if (result != true)
-            {
-                return BadRequest();
-            }
-            return NoContent();
+                var existingTask = await _Service.GetTaskById(id);
+                if (existingTask == null)
+                {
+                    return NotFound("Task does not exist");
+                }
 
+                var result = await _Service.DeleteTask(id);
+                if (!result)
+                {
+                    return BadRequest("Failed to delete task.");
+                }
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("referenced by other records"))
+                {
+                    return Conflict(ex.Message); // 409 Conflict cho lỗi khóa ngoại
+                }
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi nếu cần
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
     }
 }

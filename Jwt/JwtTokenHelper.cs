@@ -1,6 +1,7 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Road_Infrastructure_Asset_Management.Jwt
@@ -27,6 +28,17 @@ namespace Road_Infrastructure_Asset_Management.Jwt
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+        public static (string token, DateTime expiry) GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomNumber);
+                string token = Convert.ToBase64String(randomNumber);
+                DateTime expiry = DateTime.UtcNow.AddDays(7); // Refresh token sống 7 ngày
+                return (token, expiry);
+            }
         }
     }
 }

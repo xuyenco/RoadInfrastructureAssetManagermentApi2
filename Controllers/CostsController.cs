@@ -1,77 +1,155 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Road_Infrastructure_Asset_Management.Interface;
 using Road_Infrastructure_Asset_Management.Model.Request;
+using System;
+using System.Threading.Tasks;
 
 namespace Road_Infrastructure_Asset_Management.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class CostsController : ControllerBase
     {
         private readonly ICostsService _Service;
+
         public CostsController(ICostsService Service)
         {
             _Service = Service;
         }
+
         [HttpGet]
         public async Task<ActionResult> GetAllCosts()
         {
-            return Ok(await _Service.GetAllCosts());
+            try
+            {
+                var costs = await _Service.GetAllCosts();
+                return Ok(costs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
+
         [HttpGet("{id}")]
         public async Task<ActionResult> GetCostsById(int id)
         {
-            var costs = await _Service.GetCostById(id);
-            if (costs == null)
+            try
             {
-                return NotFound("Costs does't exist");
+                var cost = await _Service.GetCostById(id);
+                if (cost == null)
+                {
+                    return NotFound("Cost does not exist");
+                }
+                return Ok(cost);
             }
-            return Ok(costs);
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateCosts(CostsRequest request)
+        public async Task<ActionResult> CreateCosts([FromBody] CostsRequest request)
         {
-            var cost = await _Service.CreateCost(request);
-            if (cost == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(ModelState);
             }
-            return Ok(cost);
+
+            try
+            {
+                var cost = await _Service.CreateCost(request);
+                if (cost == null)
+                {
+                    return BadRequest("Failed to create cost.");
+                }
+                return CreatedAtAction(nameof(GetCostsById), new { id = cost.cost_id }, cost);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult> UpdateCosts(CostsRequest request, int id)
+        public async Task<ActionResult> UpdateCosts(int id, [FromBody] CostsRequest request)
         {
-            var cost = await _Service.GetCostById(id);
-            if (cost == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                return BadRequest(ModelState);
             }
-            var newcost = await _Service.UpdateCost(id, request);
-            if (newcost == null)
+
+            try
             {
-                return BadRequest();
+                var existingCost = await _Service.GetCostById(id);
+                if (existingCost == null)
+                {
+                    return NotFound("Cost does not exist");
+                }
+
+                var updatedCost = await _Service.UpdateCost(id, request);
+                if (updatedCost == null)
+                {
+                    return BadRequest("Failed to update cost.");
+                }
+                return Ok(updatedCost); // Hoặc NoContent() nếu không cần trả dữ liệu
             }
-            return Ok(newcost);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteCosts(int id)
         {
-            var cost = await _Service.GetCostById(id);
-            if (cost == null)
+            try
             {
-                return NotFound();
-            }
-            var result = await _Service.DeleteCost(id);
-            if (result != true)
-            {
-                return BadRequest();
-            }
-            return NoContent();
+                var existingCost = await _Service.GetCostById(id);
+                if (existingCost == null)
+                {
+                    return NotFound("Cost does not exist");
+                }
 
+                var result = await _Service.DeleteCost(id);
+                if (!result)
+                {
+                    return BadRequest("Failed to delete cost.");
+                }
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("referenced by other records"))
+                {
+                    return Conflict(ex.Message);
+                }
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
     }
 }

@@ -10,5 +10,6 @@ namespace Road_Infrastructure_Asset_Management.Model.Response
         public JObject attributes_schema { get; set; } // JSON object
         public JArray lifecycle_stages { get; set; }   // JSON array
         public DateTime? created_at { get; set; }
+        public string marker_url { get; set; }
     }
 }
