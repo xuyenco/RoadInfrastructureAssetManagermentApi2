@@ -7,6 +7,7 @@ using Road_Infrastructure_Asset_Management_2.Model.ImageUpload;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel;
 
 
 namespace Road_Infrastructure_Asset_Management_2.Controllers
@@ -17,12 +18,14 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
     public class AssetCagetoriesController : ControllerBase
     {
         private readonly IAssetCategoriesService _Service;
+        private readonly IConfiguration _Configuration;
         private readonly Cloudinary _Cloudinary;
 
-        public AssetCagetoriesController(IAssetCategoriesService Service, Cloudinary cloudinary)
+        public AssetCagetoriesController(IAssetCategoriesService Service, Cloudinary cloudinary, IConfiguration configuration)
         {
             _Service = Service;
             _Cloudinary = cloudinary;
+            _Configuration = configuration;
         }
 
         [HttpGet]
@@ -58,14 +61,14 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateAssetCagetories([FromForm] AssetCagetoryImageModel request)
+        public async Task<ActionResult> CreateAssetCagetories([FromForm] AssetCagetoryImageUploadRequest request)
         {
-            Console.WriteLine("Data input: " + request.attributes_schema);
+            Console.WriteLine("Data input: " + request.attribute_schema);
 
             JObject attributesSchema;
             try
             {
-                attributesSchema = JObject.Parse(request.attributes_schema);
+                attributesSchema = JObject.Parse(request.attribute_schema);
             }
             catch (JsonReaderException)
             {
@@ -74,45 +77,58 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
 
             Console.WriteLine(attributesSchema);
 
-            JArray lifecycleStages;
-            try
-            {
-                lifecycleStages = JArray.Parse(request.lifecycle_stages);
-            }
-            catch (JsonReaderException)
-            {
-                return BadRequest("Định dạng JSON của lifecycle_stages không hợp lệ.");
-            }
-            Console.WriteLine(lifecycleStages);
+            
 
-            if (request.marker == null || request.marker.Length == 0)
+            if (request.icon == null || request.icon.Length == 0)
             {
-                return BadRequest("Image file Không hợp lệ");
+                return BadRequest("Icon file Không hợp lệ");
+            }
+            if (request.sample_image == null || request.sample_image.Length == 0)
+            {
+                return BadRequest("Sample image không hợp lệ");
             }
 
             try
             {
-                var uploadParams = new ImageUploadParams
+                // Upload Icon
+                var uploadIconParams = new ImageUploadParams
                 {
-                    File = new FileDescription(request.marker.FileName, request.marker.OpenReadStream()),
+                    File = new FileDescription(request.icon.FileName, request.icon.OpenReadStream()),
                     UseFilename = true,
                     UniqueFilename = true,
                     Overwrite = true
                 };
-                var uploadResult = await _Cloudinary.UploadAsync(uploadParams);
-                if (uploadResult.Error != null)
+                
+                var uploadIconResult = await _Cloudinary.UploadAsync(uploadIconParams);
+                if (uploadIconResult.Error != null)
                 {
-                    return StatusCode((int)uploadResult.StatusCode, uploadResult.Error.Message);
+                    return StatusCode((int)uploadIconResult.StatusCode, uploadIconResult.Error.Message);
                 }
-                // Lấy URL ảnh từ Cloudinary
-                var imageUrl = uploadResult.SecureUrl.ToString();
+                var iconUrl = uploadIconResult.SecureUrl.ToString();
+
+                //Upload SampleImage
+                var uploadSampleImageParams = new ImageUploadParams
+                {
+                    File = new FileDescription(request.sample_image.FileName, request.sample_image.OpenReadStream()),
+                    UseFilename = true,
+                    UniqueFilename = true,
+                    Overwrite = true
+                };
+                var uploadSampleImageResult = await _Cloudinary.UploadAsync(uploadSampleImageParams);
+                if ( uploadSampleImageResult.Error != null)
+                {
+                    return StatusCode((int)uploadSampleImageResult.StatusCode, uploadSampleImageResult.Error.Message);
+                }
+                var sampleImageUrl = uploadSampleImageResult.SecureUrl.ToString();
+
                 // Gắn URL ảnh vào request
                 var finalRequest = new AssetCategoriesRequest
                 {
-                    category_name = request.cagetory_name,
+                    category_name = request.category_name,
                     attribute_schema = attributesSchema,
                     geometry_type = request.geometry_type,
-                    sample_image = imageUrl,
+                    sample_image = sampleImageUrl,
+                    icon_url = iconUrl,
                 };
 
                 var category = await _Service.CreateAssetCategories(finalRequest);
@@ -137,13 +153,13 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult> UpdateAssetCagetories(int id, [FromForm] AssetCagetoryImageModel request)
+        public async Task<ActionResult> UpdateAssetCagetories(int id, [FromForm] AssetCagetoryImageUploadRequest request)
         {
             // Parse attributes_schema
             JObject attributesSchema;
             try
             {
-                attributesSchema = JObject.Parse(request.attributes_schema);
+                attributesSchema = JObject.Parse(request.attribute_schema);
             }
             catch (JsonReaderException)
             {
@@ -151,18 +167,6 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             }
 
             Console.WriteLine(attributesSchema);
-
-            // Parse lifecycle_stages
-            JArray lifecycleStages;
-            try
-            {
-                lifecycleStages = JArray.Parse(request.lifecycle_stages);
-            }
-            catch (JsonReaderException)
-            {
-                return BadRequest("Định dạng JSON của lifecycle_stages không hợp lệ.");
-            }
-
             try
             {
                 // Lấy danh mục hiện tại để kiểm tra marker_url cũ
@@ -172,10 +176,41 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                     return NotFound("Asset category does not exist");
                 }
 
-                string imageUrl = existingCategory.sample_image; // Giữ URL cũ nếu không có ảnh mới
+                string sampleImageUrl = existingCategory.sample_image; // Giữ URL cũ nếu không có ảnh mới
+                string iconUrl = existingCategory.icon_url;
 
                 // Nếu có file marker mới, xử lý xóa ảnh cũ và tải ảnh mới
-                if (request.marker != null && request.marker.Length > 0)
+                if (request.icon != null && request.icon.Length > 0)
+                {
+                    // Xóa ảnh cũ trên Cloudinary nếu tồn tại
+                    if (!string.IsNullOrEmpty(existingCategory.icon_url))
+                    {
+                        var publicId = Path.GetFileNameWithoutExtension(new Uri(existingCategory.icon_url).AbsolutePath);
+                        var deletionParams = new DeletionParams(publicId);
+                        var deletionResult = await _Cloudinary.DestroyAsync(deletionParams);
+                        if (deletionResult.Result != "ok")
+                        {
+                            Console.WriteLine($"Failed to delete old image: {deletionResult.Error?.Message}");
+                        }
+                    }
+
+                    // Tải ảnh mới lên Cloudinary
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(request.icon.FileName, request.icon.OpenReadStream()),
+                        UseFilename = true,
+                        UniqueFilename = true,
+                        Overwrite = true
+                    };
+                    var uploadResult = await _Cloudinary.UploadAsync(uploadParams);
+                    if (uploadResult.Error != null)
+                    {
+                        return StatusCode((int)uploadResult.StatusCode, uploadResult.Error.Message);
+                    }
+                    iconUrl = uploadResult.SecureUrl.ToString(); // Cập nhật URL mới
+                }
+
+                if (request.sample_image != null && request.sample_image.Length > 0)
                 {
                     // Xóa ảnh cũ trên Cloudinary nếu tồn tại
                     if (!string.IsNullOrEmpty(existingCategory.sample_image))
@@ -192,7 +227,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                     // Tải ảnh mới lên Cloudinary
                     var uploadParams = new ImageUploadParams
                     {
-                        File = new FileDescription(request.marker.FileName, request.marker.OpenReadStream()),
+                        File = new FileDescription(request.sample_image.FileName, request.sample_image.OpenReadStream()),
                         UseFilename = true,
                         UniqueFilename = true,
                         Overwrite = true
@@ -202,17 +237,18 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                     {
                         return StatusCode((int)uploadResult.StatusCode, uploadResult.Error.Message);
                     }
-                    imageUrl = uploadResult.SecureUrl.ToString(); // Cập nhật URL mới
+                    sampleImageUrl = uploadResult.SecureUrl.ToString(); // Cập nhật URL mới
                 }
                 // Nếu không có file marker mới, giữ nguyên marker_url cũ
 
                 // Tạo request để cập nhật
                 var finalRequest = new AssetCategoriesRequest
                 {
-                    category_name = request.cagetory_name,
+                    category_name = request.category_name,
                     attribute_schema = attributesSchema,
                     geometry_type = request.geometry_type,
-                    sample_image = imageUrl,
+                    sample_image = sampleImageUrl,
+                    icon_url = iconUrl,
                 };
 
                 var updatedCategory = await _Service.UpdateAssetCategories(id, finalRequest);

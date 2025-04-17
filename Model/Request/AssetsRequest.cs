@@ -24,5 +24,6 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Request
         public string management_unit { get; set; }
         [Required]
         public JObject custom_attributes { get; set; }
+        public string image_url { get; set; }
     }
 }

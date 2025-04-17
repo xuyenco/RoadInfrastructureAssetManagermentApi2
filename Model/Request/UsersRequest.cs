@@ -14,5 +14,6 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Request
         [AllowedValues("admin", "manager", "technician", "inspector", "supervisor")]
         public string role { get; set; } = string.Empty;
         public string department_company_unit { get; set; } = string.Empty;
+        public string image_url {  get; set; } = string.Empty;
     }
 }

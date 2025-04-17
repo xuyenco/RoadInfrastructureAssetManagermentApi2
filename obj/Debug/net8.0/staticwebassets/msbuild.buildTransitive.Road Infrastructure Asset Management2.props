@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\Road Infrastructure Asset Management2.props" />
+</Project>

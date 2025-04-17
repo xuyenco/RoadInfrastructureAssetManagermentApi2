@@ -30,7 +30,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 var sql = @"SELECT asset_id, category_id, ST_AsGeoJSON(geometry) as geometry, asset_name, asset_code, 
                            address, construction_year, operation_year, land_area, floor_area, 
                            original_value, remaining_value, asset_status, installation_unit, 
-                           management_unit, custom_attributes, created_at 
+                           management_unit, custom_attributes, created_at , image_url
                            FROM assets";
 
                 try
@@ -58,7 +58,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 installation_unit = reader.IsDBNull(reader.GetOrdinal("installation_unit")) ? null : reader.GetString(reader.GetOrdinal("installation_unit")),
                                 management_unit = reader.IsDBNull(reader.GetOrdinal("management_unit")) ? null : reader.GetString(reader.GetOrdinal("management_unit")),
                                 custom_attributes = reader.IsDBNull(reader.GetOrdinal("custom_attributes")) ? null : JObject.Parse(reader.GetString(reader.GetOrdinal("custom_attributes"))),
-                                created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at")),
+                                image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url"))
                             };
                             assets.Add(asset);
                         }
@@ -84,7 +85,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 var sql = @"SELECT asset_id, category_id, ST_AsGeoJSON(geometry) as geometry, asset_name, asset_code, 
                            address, construction_year, operation_year, land_area, floor_area, 
                            original_value, remaining_value, asset_status, installation_unit, 
-                           management_unit, custom_attributes, created_at 
+                           management_unit, custom_attributes, created_at , image_url
                            FROM assets WHERE asset_id = @id";
 
                 try
@@ -114,7 +115,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     installation_unit = reader.IsDBNull(reader.GetOrdinal("installation_unit")) ? null : reader.GetString(reader.GetOrdinal("installation_unit")),
                                     management_unit = reader.IsDBNull(reader.GetOrdinal("management_unit")) ? null : reader.GetString(reader.GetOrdinal("management_unit")),
                                     custom_attributes = reader.IsDBNull(reader.GetOrdinal("custom_attributes")) ? null : JObject.Parse(reader.GetString(reader.GetOrdinal("custom_attributes"))),
-                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at")),
+                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url"))
                                 };
                             }
                             return null;
@@ -143,10 +145,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 INSERT INTO assets 
                 (category_id, asset_name, asset_code, address, geometry, construction_year, operation_year, 
                  land_area, floor_area, original_value, remaining_value, asset_status, installation_unit, 
-                 management_unit, custom_attributes)
+                 management_unit, custom_attributes,image_url)
                 VALUES (@category_id, @asset_name, @asset_code, @address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), 
                         @construction_year, @operation_year, @land_area, @floor_area, @original_value, 
-                        @remaining_value, @asset_status, @installation_unit, @management_unit, @custom_attributes::jsonb)
+                        @remaining_value, @asset_status, @installation_unit, @management_unit, @custom_attributes::jsonb, @image_url)
                 RETURNING asset_id";
 
                 try
@@ -168,6 +170,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@installation_unit", (object)entity.installation_unit ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@management_unit", (object)entity.management_unit ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@custom_attributes", entity.custom_attributes.ToString());
+                        cmd.Parameters.AddWithValue("@image_url",(object)entity.image_url ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         return await GetAssetById(newId);
                     }
@@ -221,7 +224,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     asset_status = @asset_status,
                     installation_unit = @installation_unit,
                     management_unit = @management_unit,
-                    custom_attributes = @custom_attributes::jsonb
+                    custom_attributes = @custom_attributes::jsonb,
+                    image_url = @image_url
                 WHERE asset_id = @id";
 
                 try
@@ -244,6 +248,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@installation_unit", (object)entity.installation_unit ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@management_unit", (object)entity.management_unit ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@custom_attributes", entity.custom_attributes.ToString());
+                        cmd.Parameters.AddWithValue("@image_url", (object)entity.image_url ?? DBNull.Value);
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
                         {

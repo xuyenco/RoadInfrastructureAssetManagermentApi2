@@ -30,9 +30,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         {
                             var incidentImage = new IncidentImageResponse
                             {
-                               incident_images_id = reader.GetInt32(reader.GetOrdinal("incident_images_id")),
+                               incident_image_id = reader.GetInt32(reader.GetOrdinal("incident_image_id")),
                                incident_id = reader.GetInt32(reader.GetOrdinal("incident_id")),
-                               image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url"))
+                               image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
+                               created_at = reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             incidentImages.Add(incidentImage);
                         }
@@ -70,9 +71,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                             {
                                 var incidentImage = new IncidentImageResponse
                                 {
-                                    incident_images_id = reader.GetInt32(reader.GetOrdinal("incident_images_id")),
+                                    incident_image_id = reader.GetInt32(reader.GetOrdinal("incident_image_id")),
                                     incident_id = reader.GetInt32(reader.GetOrdinal("incident_id")),
-                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url"))
+                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
+                                    created_at = reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
                                 incidentImages.Add(incidentImage);
                             }
@@ -96,7 +98,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT * FROM incident_images WHERE incident_images_id = @id";
+                var sql = "SELECT * FROM incident_images WHERE incident_image_id = @id";
 
                 try
                 {
@@ -109,9 +111,11 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                             {
                                 return new IncidentImageResponse
                                 {
-                                    incident_images_id = reader.GetInt32(reader.GetOrdinal("incident_images_id")),
+                                    incident_image_id = reader.GetInt32(reader.GetOrdinal("incident_image_id")),
                                     incident_id = reader.GetInt32(reader.GetOrdinal("incident_id")),
-                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url"))
+                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
+                                    created_at = reader.GetDateTime(reader.GetOrdinal("created_at"))
+
                                 };
                             }
                             return null;
@@ -138,7 +142,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 INSERT INTO incident_images 
                 (incident_id, image_url)
                 VALUES (@incident_id, @image_url)
-                RETURNING incident_images_id";
+                RETURNING incident_image_id";
 
                 try
                 {
@@ -153,7 +157,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 }
                 catch (NpgsqlException ex)
                 {
-                    throw new InvalidOperationException("Failed to create user.", ex);
+                    throw new InvalidOperationException($"Failed to create incident image: {ex.ToString()}");
                 }
                 finally
                 {
@@ -171,7 +175,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 UPDATE incident_images SET
                     incident_id = @incident_id,
                     image_url = @image_url
-                WHERE incident_images_id = @id";
+                WHERE incident_image_id = @id";
 
                 try
                 {
@@ -192,7 +196,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 catch (NpgsqlException ex)
                 {
 
-                    throw new InvalidOperationException($"Failed to update user with ID {id}.", ex);
+                    throw new InvalidOperationException($"Failed to update incident image with ID {id}.", ex);
                 }
                 finally
                 {
@@ -206,7 +210,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "DELETE FROM incident_images WHERE incident_images_id = @id";
+                var sql = "DELETE FROM incident_images WHERE incident_image_id = @id";
 
                 try
                 {

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Jwt;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
+using Road_Infrastructure_Asset_Management.Model.ImageUpload;
 
 namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
@@ -79,7 +80,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                 {
                     return BadRequest("Failed to create incidentImage.");
                 }
-                return CreatedAtAction(nameof(GetIncidentImagesById), new { id = incidentImage.incident_images_id }, incidentImage);
+                return CreatedAtAction(nameof(GetIncidentImagesById), new { id = incidentImage.incident_image_id }, incidentImage);
             }
             catch (ArgumentException ex)
             {

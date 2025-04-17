@@ -25,7 +25,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, created_at FROM tasks";
+                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, method_summary, main_result, created_at FROM tasks";
 
                 try
                 {
@@ -46,6 +46,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 end_date = reader.IsDBNull(reader.GetOrdinal("end_date")) ? null : reader.GetDateTime(reader.GetOrdinal("end_date")),
                                 execution_unit_id = reader.IsDBNull(reader.GetOrdinal("execution_unit_id")) ? null : reader.GetInt32(reader.GetOrdinal("execution_unit_id")),
                                 supervisor_id = reader.IsDBNull(reader.GetOrdinal("supervisor_id")) ? null : reader.GetInt32(reader.GetOrdinal("supervisor_id")),
+                                method_summary = reader.IsDBNull(reader.GetOrdinal("method_summary")) ? null : reader.GetString(reader.GetOrdinal("method_summary")),
+                                main_result = reader.IsDBNull(reader.GetOrdinal("main_result")) ? null : reader.GetString(reader.GetOrdinal("main_result")),
                                 created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             tasks.Add(task);
@@ -69,7 +71,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, created_at FROM tasks WHERE task_id = @id";
+                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, method_summary, main_result, created_at FROM tasks WHERE task_id = @id";
 
                 try
                 {
@@ -92,7 +94,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     end_date = reader.IsDBNull(reader.GetOrdinal("end_date")) ? null : reader.GetDateTime(reader.GetOrdinal("end_date")),
                                     execution_unit_id = reader.IsDBNull(reader.GetOrdinal("execution_unit_id")) ? null : reader.GetInt32(reader.GetOrdinal("execution_unit_id")),
                                     supervisor_id = reader.IsDBNull(reader.GetOrdinal("supervisor_id")) ? null : reader.GetInt32(reader.GetOrdinal("supervisor_id")),
+                                    method_summary = reader.IsDBNull(reader.GetOrdinal("method_summary")) ? null : reader.GetString(reader.GetOrdinal("method_summary")),
+                                    main_result = reader.IsDBNull(reader.GetOrdinal("main_result")) ? null : reader.GetString(reader.GetOrdinal("main_result")),
                                     created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                   
                                 };
                             }
                             return null;
@@ -119,8 +124,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO tasks 
-                (task_type, work_volume, status, address, geometry, start_date, end_date, execution_unit_id, supervisor_id)
-                VALUES (@task_type, @work_volume, @status, @address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @start_date, @end_date, @execution_unit_id, @supervisor_id)
+                (task_type, work_volume, status, address, geometry, start_date, end_date, execution_unit_id, supervisor_id, method_summary, main_result)
+                VALUES (@task_type, @work_volume, @status, @address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @start_date, @end_date, @execution_unit_id, @supervisor_id, @method_summary, @main_result)
                 RETURNING task_id";
 
                 try
@@ -135,6 +140,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@start_date", (object)entity.start_date ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@end_date", (object)entity.end_date ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@execution_unit_id", (object)entity.execution_unit_id ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@method_summary", (object)entity.method_summary ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@main_result", (object)entity.main_result ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@supervisor_id", (object)entity.supervisor_id ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         return await GetTaskById(newId);
@@ -164,7 +171,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
 
         public async Task<TasksResponse?> UpdateTask(int id, TasksRequest entity)
         {
-            ValidateRequest(entity);
+            //ValidateRequest(entity);
 
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
@@ -179,7 +186,9 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     start_date = @start_date,
                     end_date = @end_date,
                     execution_unit_id = @execution_unit_id,
-                    supervisor_id = @supervisor_id
+                    supervisor_id = @supervisor_id,
+                    method_summary = @method_summary,
+                    main_result = @main_result
                 WHERE task_id = @id";
 
                 try
@@ -188,7 +197,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.Parameters.AddWithValue("@task_type", entity.task_type);
-                        cmd.Parameters.AddWithValue("@work_volume", (object)entity.work_volume ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@work_volume", entity.work_volume);
                         cmd.Parameters.AddWithValue("@status", entity.status);
                         cmd.Parameters.AddWithValue("@address", (object)entity.address ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@geometry", JsonConvert.SerializeObject(entity.geometry));
@@ -196,6 +205,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@end_date", (object)entity.end_date ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@execution_unit_id", (object)entity.execution_unit_id ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@supervisor_id", (object)entity.supervisor_id ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@method_summary", (object)entity.method_summary ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@main_result", (object)entity.main_result ?? DBNull.Value);
 
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
@@ -218,7 +229,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
-                    throw new InvalidOperationException($"Failed to update task with ID {id}.", ex);
+                    throw new InvalidOperationException($"Failed to update task with ID {id}: {ex}");
                 }
                 finally
                 {

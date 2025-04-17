@@ -8,6 +8,7 @@ using Road_Infrastructure_Asset_Management_2.Jwt;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Microsoft.AspNetCore.Razor.Hosting;
 using System.Runtime.ConstrainedExecution;
+using Road_Infrastructure_Asset_Management.Model.ImageUpload;
 
 namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
@@ -42,7 +43,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
         
         [HttpPost]
-        public async Task<ActionResult> CreateUsers([FromForm] UserImageModel request)
+        public async Task<ActionResult> CreateUsers([FromForm] UserImageUploadRequest request)
         {
             try
             {
@@ -67,11 +68,11 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                 var finalRequest = new UsersRequest
                 {
                     username = request.username,
-                    password = request.password_hash,
+                    password = request.password,
                     full_name = request.full_name,
                     email = request.email,
                     role = request.role,
-                    //i = imageUrl
+                    image_url = imageUrl
                 };
 
                 var user = await _Service.CreateUser(finalRequest);
@@ -96,7 +97,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult> UpdateUsers([FromForm] UserImageModel request, int id)
+        public async Task<ActionResult> UpdateUsers([FromForm] UserImageUploadRequest request, int id)
         {
             try
             {
@@ -105,44 +106,44 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                 {
                     return NotFound("User does not exist");
                 }
-                //string ImageUrl = exexistingUser.image_url;
-                //if (request.image != null && request.image.Length > 0)
-                //{
-                //    // Xóa ảnh cũ trên Cloudinary nếu tồn tại
-                //    if (!string.IsNullOrEmpty(exexistingUser.image_url))
-                //    {
-                //        var publicId = Path.GetFileNameWithoutExtension(new Uri(exexistingUser.image_url).AbsolutePath);
-                //        var deletionParams = new DeletionParams(publicId);
-                //        var deletionResult = await _Cloudinary.DestroyAsync(deletionParams);
-                //        if (deletionResult.Result != "ok")
-                //        {
-                //            Console.WriteLine($"Failed to delete old image: {deletionResult.Error?.Message}");
-                //        }
-                //    }
+                string ImageUrl = exexistingUser.image_url;
+                if (request.image != null && request.image.Length > 0)
+                {
+                    // Xóa ảnh cũ trên Cloudinary nếu tồn tại
+                    if (!string.IsNullOrEmpty(exexistingUser.image_url))
+                    {
+                        var publicId = Path.GetFileNameWithoutExtension(new Uri(exexistingUser.image_url).AbsolutePath);
+                        var deletionParams = new DeletionParams(publicId);
+                        var deletionResult = await _Cloudinary.DestroyAsync(deletionParams);
+                        if (deletionResult.Result != "ok")
+                        {
+                            Console.WriteLine($"Failed to delete old image: {deletionResult.Error?.Message}");
+                        }
+                    }
 
-                //    // Tải ảnh mới lên Cloudinary
-                //    var uploadParams = new ImageUploadParams
-                //    {
-                //        File = new FileDescription(request.image.FileName, request.image.OpenReadStream()),
-                //        UseFilename = true,
-                //        UniqueFilename = true,
-                //        Overwrite = true
-                //    };
-                //    var uploadResult = await _Cloudinary.UploadAsync(uploadParams);
-                //    if (uploadResult.Error != null)
-                //    {
-                //        return StatusCode((int)uploadResult.StatusCode, uploadResult.Error.Message);
-                //    }
-                //    ImageUrl = uploadResult.SecureUrl.ToString(); // Cập nhật URL mới
-                //}
+                    // Tải ảnh mới lên Cloudinary
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(request.image.FileName, request.image.OpenReadStream()),
+                        UseFilename = true,
+                        UniqueFilename = true,
+                        Overwrite = true
+                    };
+                    var uploadResult = await _Cloudinary.UploadAsync(uploadParams);
+                    if (uploadResult.Error != null)
+                    {
+                        return StatusCode((int)uploadResult.StatusCode, uploadResult.Error.Message);
+                    }
+                    ImageUrl = uploadResult.SecureUrl.ToString(); // Cập nhật URL mới
+                }
                 var finalRequest = new UsersRequest
                 {
                     username = request.username,
-                    password = request.password_hash,
+                    password = request.password,
                     full_name = request.full_name,
                     email = request.email,
                     role = request.role,
-                    //image_url = ImageUrl,
+                    image_url = ImageUrl,
                 };
 
                 var User = await _Service.UpdateUser(id,finalRequest);

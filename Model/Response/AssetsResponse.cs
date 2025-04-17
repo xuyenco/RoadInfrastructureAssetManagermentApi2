@@ -22,5 +22,6 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Response
         public string management_unit { get; set; }
         public JObject custom_attributes { get; set; }
         public DateTime? created_at { get; set; }
+        public string image_url { get; set; }
     }
 }

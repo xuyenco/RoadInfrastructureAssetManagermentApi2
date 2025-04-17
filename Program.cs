@@ -81,6 +81,8 @@ builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IIncidentImageService, IncidentImageService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IMaintenanceHistoryService, MaintenanceHistoryService>();
+builder.Services.AddScoped<IMaintenanceDocumentService, MaintenanceDocumentService>();
 
 
 // Set up Cloudinary

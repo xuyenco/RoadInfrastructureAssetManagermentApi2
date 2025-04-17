@@ -14,5 +14,6 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Request
         [Required]
         public JObject attribute_schema { get; set; } // JSON object
         public string sample_image { get; set; }
+        public string icon_url { get; set; }
     }
 }

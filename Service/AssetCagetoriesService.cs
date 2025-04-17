@@ -40,15 +40,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
                                 category_name = reader.GetString(reader.GetOrdinal("category_name")),
                                 geometry_type = reader.GetString(reader.GetOrdinal("geometry_type")),
-                                attribute_schema = reader.IsDBNull(reader.GetOrdinal("attribute_schema"))
-                                    ? null
-                                    : JObject.Parse(reader.GetString(reader.GetOrdinal("attribute_schema"))),
-                                sample_image = reader.IsDBNull(reader.GetOrdinal("sample_image"))
-                                    ? null
-                                    : reader.GetString(reader.GetOrdinal("sample_image")),
-                                created_at = reader.IsDBNull(reader.GetOrdinal("created_at"))
-                                    ? null
-                                    : reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                attribute_schema = reader.IsDBNull(reader.GetOrdinal("attribute_schema")) ? null : JObject.Parse(reader.GetString(reader.GetOrdinal("attribute_schema"))),
+                                sample_image = reader.IsDBNull(reader.GetOrdinal("sample_image")) ? null : reader.GetString(reader.GetOrdinal("sample_image")),
+                                icon_url = reader.IsDBNull(reader.GetOrdinal("icon_url")) ? null : reader.GetString(reader.GetOrdinal("icon_url")),
+                                created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             assetCategories.Add(category);
                         }
@@ -87,15 +82,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
                                     category_name = reader.GetString(reader.GetOrdinal("category_name")),
                                     geometry_type = reader.GetString(reader.GetOrdinal("geometry_type")),
-                                    attribute_schema = reader.IsDBNull(reader.GetOrdinal("attribute_schema"))
-                                        ? null
-                                        : JObject.Parse(reader.GetString(reader.GetOrdinal("attribute_schema"))),
-                                    sample_image = reader.IsDBNull(reader.GetOrdinal("sample_image"))
-                                        ? null
-                                        : reader.GetString(reader.GetOrdinal("sample_image")),
-                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at"))
-                                        ? null
-                                        : reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                    attribute_schema = reader.IsDBNull(reader.GetOrdinal("attribute_schema")) ? null : JObject.Parse(reader.GetString(reader.GetOrdinal("attribute_schema"))),
+                                    sample_image = reader.IsDBNull(reader.GetOrdinal("sample_image")) ? null : reader.GetString(reader.GetOrdinal("sample_image")),
+                                    icon_url = reader.IsDBNull(reader.GetOrdinal("icon_url")) ? null : reader.GetString(reader.GetOrdinal("icon_url")),
+                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
                             }
                             return null;
@@ -122,8 +112,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO asset_categories 
-                (category_name, geometry_type, attribute_schema, sample_image)
-                VALUES (@name, @geomType, @attrsSchema::jsonb, @sampleImage)
+                (category_name, geometry_type, attribute_schema, sample_image, icon_url)
+                VALUES (@name, @geomType, @attrsSchema::jsonb, @sampleImage, @icon_url)
                 RETURNING category_id";
 
                 try
@@ -134,6 +124,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@geomType", entity.geometry_type);
                         cmd.Parameters.AddWithValue("@attrsSchema", entity.attribute_schema.ToString());
                         cmd.Parameters.AddWithValue("@sampleImage", (object)entity.sample_image ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@icon_url", (object)entity.icon_url ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         return await GetAssetCategoriesById(newId);
                     }
@@ -172,7 +163,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     category_name = @name,
                     geometry_type = @geomType,
                     attribute_schema = @attrsSchema::jsonb,
-                    sample_image = @sampleImage
+                    sample_image = @sampleImage,
+                    icon_url = @icon_url,
                 WHERE category_id = @id";
 
                 try
@@ -184,6 +176,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@geomType", entity.geometry_type);
                         cmd.Parameters.AddWithValue("@attrsSchema", entity.attribute_schema.ToString());
                         cmd.Parameters.AddWithValue("@sampleImage", (object)entity.sample_image ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@icon_url", (object)entity.icon_url ?? DBNull.Value);
 
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)

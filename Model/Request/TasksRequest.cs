@@ -17,5 +17,7 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Request
         public DateTime? end_date { get; set; }
         public int? execution_unit_id { get; set; }
         public int? supervisor_id { get; set; }
+        public string method_summary { get; set; }
+        public string? main_result { get; set; }
     }
 }

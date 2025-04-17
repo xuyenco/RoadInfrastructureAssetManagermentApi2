@@ -1,11 +1,7 @@
 ﻿using Npgsql;
-using BCrypt.Net;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Road_Infrastructure_Asset_Management_2.Jwt;
 
 namespace Road_Infrastructure_Asset_Management_2.Service
@@ -43,6 +39,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString(reader.GetOrdinal("email")),
                                 role = reader.GetString(reader.GetOrdinal("role")),
                                 department_company_unit = reader.IsDBNull(reader.GetOrdinal("department_company_unit")) ? null : reader.GetString(reader.GetOrdinal("department_company_unit")),
+                                image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
                                 created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
                                 refresh_token = reader.IsDBNull(reader.GetOrdinal("refresh_token")) ? null : reader.GetString(reader.GetOrdinal("refresh_token")),
                                 refresh_token_expiry = reader.IsDBNull(reader.GetOrdinal("refresh_token_expiry")) ? null : reader.GetDateTime(reader.GetOrdinal("refresh_token_expiry"))
@@ -87,6 +84,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString(reader.GetOrdinal("email")),
                                     role = reader.GetString(reader.GetOrdinal("role")),
                                     department_company_unit = reader.IsDBNull(reader.GetOrdinal("department_company_unit")) ? null : reader.GetString(reader.GetOrdinal("department_company_unit")),
+                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
                                     created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
                                     refresh_token = reader.IsDBNull(reader.GetOrdinal("refresh_token")) ? null : reader.GetString(reader.GetOrdinal("refresh_token")),
                                     refresh_token_expiry = reader.IsDBNull(reader.GetOrdinal("refresh_token_expiry")) ? null : reader.GetDateTime(reader.GetOrdinal("refresh_token_expiry"))
@@ -118,8 +116,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO users 
-                (username, password, full_name, email, role, department_company_unit)
-                VALUES (@username, @password, @full_name, @email, @role, @department_company_unit)
+                (username, password, full_name, email, role, department_company_unit, image_url)
+                VALUES (@username, @password, @full_name, @email, @role, @department_company_unit, @image_url)
                 RETURNING user_id";
 
                 try
@@ -132,6 +130,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@email", (object)entity.email ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@role", entity.role);
                         cmd.Parameters.AddWithValue("@department_company_unit", (object)entity.department_company_unit ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_url", (object)entity.image_url ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         return await GetUserById(newId);
                     }
@@ -183,7 +182,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         full_name = @full_name,
                         email = @email,
                         role = @role,
-                        department_company_unit = @department_company_unit
+                        department_company_unit = @department_company_unit,
+                        image_url = @image_url
                     WHERE user_id = @id";
                 }
 
@@ -197,6 +197,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@email", (object)entity.email ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@role", entity.role);
                         cmd.Parameters.AddWithValue("@department_company_unit", (object)entity.department_company_unit ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_url", (object)entity.image_url ?? DBNull.Value);
 
                         if (!string.IsNullOrWhiteSpace(entity.password))
                         {

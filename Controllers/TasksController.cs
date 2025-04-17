@@ -31,7 +31,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             catch (Exception ex)
             {
                 // Ghi log lỗi nếu cần
-                return StatusCode(500, "An unexpected error occurred.");
+                return StatusCode(500, $"An unexpected error occurred : {ex}.");
             }
         }
 

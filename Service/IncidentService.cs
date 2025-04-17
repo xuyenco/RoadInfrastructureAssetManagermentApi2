@@ -25,7 +25,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT incident_id, address, ST_AsGeoJSON(geometry) as geometry, route, image_url, severity_level, damage_level, processing_status, created_at FROM incidents";
+                var sql = "SELECT incident_id, address, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, created_at FROM incidents";
 
                 try
                 {
@@ -40,10 +40,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
                                 geometry = ParseGeoJson(reader.GetString(reader.GetOrdinal("geometry")), "geometry"),
                                 route = reader.IsDBNull(reader.GetOrdinal("route")) ? null : reader.GetString(reader.GetOrdinal("route")),
-                                image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
                                 severity_level = reader.IsDBNull(reader.GetOrdinal("severity_level")) ? null : reader.GetString(reader.GetOrdinal("severity_level")),
                                 damage_level = reader.IsDBNull(reader.GetOrdinal("damage_level")) ? null : reader.GetString(reader.GetOrdinal("damage_level")),
                                 processing_status = reader.IsDBNull(reader.GetOrdinal("processing_status")) ? null : reader.GetString(reader.GetOrdinal("processing_status")),
+                                task_id = reader.IsDBNull (reader.GetOrdinal("task_id")) ? null : reader.GetInt32 (reader.GetOrdinal("task_id")),
                                 created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             incidents.Add(incident);
@@ -67,7 +67,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT incident_id, address, ST_AsGeoJSON(geometry) as geometry, route, image_url, severity_level, damage_level, processing_status, created_at FROM incidents WHERE incident_id = @id";
+                var sql = "SELECT incident_id, address, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, created_at FROM incidents WHERE incident_id = @id";
 
                 try
                 {
@@ -84,10 +84,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
                                     geometry = ParseGeoJson(reader.GetString(reader.GetOrdinal("geometry")), "geometry"),
                                     route = reader.IsDBNull(reader.GetOrdinal("route")) ? null : reader.GetString(reader.GetOrdinal("route")),
-                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
                                     severity_level = reader.IsDBNull(reader.GetOrdinal("severity_level")) ? null : reader.GetString(reader.GetOrdinal("severity_level")),
                                     damage_level = reader.IsDBNull(reader.GetOrdinal("damage_level")) ? null : reader.GetString(reader.GetOrdinal("damage_level")),
                                     processing_status = reader.IsDBNull(reader.GetOrdinal("processing_status")) ? null : reader.GetString(reader.GetOrdinal("processing_status")),
+                                    task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
                                     created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
                             }
@@ -115,8 +115,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO incidents 
-                (address, geometry, route, image_url, severity_level, damage_level, processing_status)
-                VALUES (@address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @route, @image_url, @severity_level, @damage_level, @processing_status)
+                (address, geometry, route, severity_level, damage_level, processing_status,task_id)
+                VALUES (@address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @route, @severity_level, @damage_level, @processing_status, @task_id)
                 RETURNING incident_id";
 
                 try
@@ -126,10 +126,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@address", (object)entity.address ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@geometry", JsonConvert.SerializeObject(entity.geometry));
                         cmd.Parameters.AddWithValue("@route", (object)entity.route ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@image_url", (object)entity.image_url ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@severity_level", entity.severity_level);
                         cmd.Parameters.AddWithValue("@damage_level", entity.damage_level);
                         cmd.Parameters.AddWithValue("@processing_status", entity.processing_status);
+                        cmd.Parameters.AddWithValue("@task_id", (object)entity.task_id ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         return await GetIncidentById(newId)!;
                     }
@@ -161,10 +161,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     address = @address,
                     geometry = ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405),
                     route = @route,
-                    image_url = @image_url,
                     severity_level = @severity_level,
                     damage_level = @damage_level,
-                    processing_status = @processing_status
+                    processing_status = @processing_status,
+                    task_id = @task_id
                 WHERE incident_id = @id";
 
                 try
@@ -175,10 +175,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@address", (object)entity.address ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@geometry", JsonConvert.SerializeObject(entity.geometry));
                         cmd.Parameters.AddWithValue("@route", (object)entity.route ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@image_url", (object)entity.image_url ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@severity_level", entity.severity_level);
                         cmd.Parameters.AddWithValue("@damage_level", entity.damage_level);
                         cmd.Parameters.AddWithValue("@processing_status", entity.processing_status);
+                        cmd.Parameters.AddWithValue("@task_id", (object)entity.task_id ?? DBNull.Value);
 
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
