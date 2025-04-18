@@ -55,6 +55,48 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
         }
 
+        public async Task<IEnumerable<MaintenanceDocumentResponse>> GetMaintenanceDocumentByMaintenanceId(int id)
+        {
+            var maintenanceDocuments = new List<MaintenanceDocumentResponse>();
+            using (var _connection = new NpgsqlConnection(_connectionString))
+            {
+                await _connection.OpenAsync();
+                var sql = "SELECT * FROM maintenance_documents WHERE maintenance_id = @id";
+
+                try
+                {
+                    using (var cmd = new NpgsqlCommand(sql, _connection))
+                    {
+                        cmd.Parameters.AddWithValue("@id", id);
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var maintenanceDocument = new MaintenanceDocumentResponse
+                                {
+                                    document_id = reader.GetInt32(reader.GetOrdinal("document_id")),
+                                    maintenance_id = reader.GetInt32(reader.GetOrdinal("maintenance_id")),
+                                    file_url = reader.GetString(reader.GetOrdinal("file_url")),
+                                    created_at = reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                };
+                                maintenanceDocuments.Add(maintenanceDocument);
+                            }
+                        }
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    throw new InvalidOperationException($"Failed to retrieve maintenance document with ID {id}.", ex);
+                }
+                finally
+                {
+                    await _connection.CloseAsync();
+                }
+                return maintenanceDocuments;
+            }
+        }
+
+
         public async Task<MaintenanceDocumentResponse?> GetMaintenanceDocumentById(int id)
         {
             using (var _connection = new NpgsqlConnection(_connectionString))
@@ -182,6 +224,32 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             {
                 await _connection.OpenAsync();
                 var sql = "DELETE FROM maintenance_documents WHERE document_id = @id";
+
+                try
+                {
+                    using (var cmd = new NpgsqlCommand(sql, _connection))
+                    {
+                        cmd.Parameters.AddWithValue("@id", id);
+                        var affectedRows = await cmd.ExecuteNonQueryAsync();
+                        return affectedRows > 0;
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    throw new InvalidOperationException($"Failed to delete maintenance document with ID {id}.", ex);
+                }
+                finally
+                {
+                    await _connection.CloseAsync();
+                }
+            }
+        }
+        public async Task<bool> DeleteMaintenanceDocumentByMaintenanceId(int id)
+        {
+            using (var _connection = new NpgsqlConnection(_connectionString))
+            {
+                await _connection.OpenAsync();
+                var sql = "DELETE FROM maintenance_documents WHERE maintenance_id = @id";
 
                 try
                 {

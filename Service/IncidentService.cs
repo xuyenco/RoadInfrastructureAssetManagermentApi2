@@ -52,7 +52,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 }
                 catch (NpgsqlException ex)
                 {
-                    throw new InvalidOperationException("Failed to retrieve incidents from database.", ex);
+                    throw new InvalidOperationException($"Failed to retrieve incidents from database: {ex}", ex);
                 }
                 finally
                 {
@@ -97,7 +97,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 }
                 catch (NpgsqlException ex)
                 {
-                    throw new InvalidOperationException($"Failed to retrieve incident with ID {id}.", ex);
+                    throw new InvalidOperationException($"Failed to retrieve incident with ID {id} because: {ex}.");
                 }
                 finally
                 {
@@ -140,7 +140,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
-                    throw new InvalidOperationException("Failed to create incident.", ex);
+                    throw new InvalidOperationException($"Failed to create incident because {ex}",ex);
                 }
                 finally
                 {
@@ -194,7 +194,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
-                    throw new InvalidOperationException($"Failed to update incident with ID {id}.", ex);
+                    throw new InvalidOperationException($"Failed to update incident with ID {id} because {ex}.", ex);
                 }
                 finally
                 {

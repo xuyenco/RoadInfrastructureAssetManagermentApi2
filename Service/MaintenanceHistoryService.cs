@@ -53,6 +53,47 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
         }
 
+        public async Task<IEnumerable<MaintenanceHistoryResponse>> GetMaintenanceHistoryByAssetId(int id)
+        {
+            var maintenanceHistories = new List<MaintenanceHistoryResponse>();
+            using (var _connection = new NpgsqlConnection(_connectionString))
+            {
+                await _connection.OpenAsync();
+                var sql = "SELECT * FROM maintenance_history WHERE asset_id = @id";
+
+                try
+                {
+                    using (var cmd = new NpgsqlCommand(sql, _connection))
+                    {
+                        cmd.Parameters.AddWithValue("@id", id);
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var maintenanceHistory = new MaintenanceHistoryResponse
+                                {
+                                    maintenance_id = reader.GetInt32(reader.GetOrdinal("maintenance_id")),
+                                    task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
+                                    asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
+                                    created_at = reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                };
+                                maintenanceHistories.Add(maintenanceHistory);
+                            }
+                        }
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    throw new InvalidOperationException($"Failed to retrieve maintenance history with ID {id}.", ex);
+                }
+                finally
+                {
+                    await _connection.CloseAsync();
+                }
+                return maintenanceHistories;
+            }
+        }
+
         public async Task<MaintenanceHistoryResponse?> GetMaintenanceHistoryById(int id)
         {
             using (var _connection = new NpgsqlConnection(_connectionString))
@@ -139,7 +180,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 UPDATE maintenance_history SET
-                    task id = @task_id,
+                    task_id = @task_id,
                     asset_id = @asset_id
                 WHERE maintenance_id = @id";
 
@@ -165,7 +206,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         throw new InvalidOperationException($"Asset ID {entity.asset_id} or Task id {entity.task_id} does not exist.", ex);
                     }
-                    throw new InvalidOperationException("Failed to create maintenance history.", ex);
+                    throw new InvalidOperationException($"Failed to update maintenance history :{ex}.", ex);
                 }
                 finally
                 {

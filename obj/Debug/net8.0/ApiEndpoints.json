@@ -779,6 +779,38 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.MaintenanceDocumentController",
+    "Method": "GetMaintenanceDocumentByMaintenanceId",
+    "RelativePath": "api/MaintenanceDocument/MaintenanceId/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.MaintenanceDocumentController",
+    "Method": "DeleteMaintenanceDocumentByMaintenanceId",
+    "RelativePath": "api/MaintenanceDocument/MaintenanceId/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.MaintenanceHistoriesController",
     "Method": "GetAllMaintenanceHistories",
     "RelativePath": "api/MaintenanceHistories",
@@ -846,6 +878,22 @@
     "Method": "DeleteMaintenanceHistory",
     "RelativePath": "api/MaintenanceHistories/{id}",
     "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.MaintenanceHistoriesController",
+    "Method": "GetMaintenanceHistoryByAssetId",
+    "RelativePath": "api/MaintenanceHistories/AssetId/{id}",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [

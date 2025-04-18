@@ -2,9 +2,11 @@
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Road_Infrastructure_Asset_Management.Model.ImageUpload;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
+using Road_Infrastructure_Asset_Management.Model.ImageUpload;
+using System.Linq;
+using System.Reflection.Metadata;
 
 namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
@@ -48,6 +50,20 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                     return NotFound("Maintenance Document does not exist");
                 }
                 return Ok(cost);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpGet("MaintenanceId/{id}")]
+        public async Task<ActionResult> GetMaintenanceDocumentByMaintenanceId(int id)
+        {
+            try
+            {
+                var costs = await _Service.GetMaintenanceDocumentByMaintenanceId(id);
+                return Ok(costs);
             }
             catch (Exception ex)
             {
@@ -139,9 +155,22 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                 }
 
                 string fileUrl = existingDocument.file_url; // Preserve existing file URL if no new file is uploaded
-                if (request.file != null)
+                if (request.file != null && request.file.Length > 0)
                 {
-                    // Determine file type and configure Cloudinary upload
+                    // Delete the old file from Cloudinary if it exists
+                    if (!string.IsNullOrEmpty(existingDocument.file_url))
+                    {
+                        var publicId = Path.GetFileNameWithoutExtension(new Uri(existingDocument.file_url).AbsolutePath);
+                        var deletionParams = new DeletionParams(publicId);
+                        var deletionResult = await _Cloudinary.DestroyAsync(deletionParams);
+                        if (deletionResult.Result != "ok")
+                        {
+                            Console.WriteLine($"Failed to delete old file: {deletionResult.Error?.Message}");
+                            // Log the error but proceed with the update
+                        }
+                    }
+
+                    // Upload the new file to Cloudinary
                     var extension = Path.GetExtension(request.file.FileName).ToLowerInvariant();
                     if (new[] { ".jpg", ".jpeg", ".png" }.Contains(extension))
                     {
@@ -193,7 +222,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                     return BadRequest("Failed to update maintenance document.");
                 }
 
-                return Ok(updatedDocument); // Or NoContent() if you prefer not to return data
+                return Ok(updatedDocument);
             }
             catch (ArgumentException ex)
             {
@@ -205,7 +234,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "An unexpected error occurred.");
+                return StatusCode(500, "An unexpected error occurred: " + ex.Message);
             }
         }
 
@@ -214,12 +243,26 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         {
             try
             {
-                var existingCost = await _Service.GetMaintenanceDocumentById(id);
-                if (existingCost == null)
+                var existingDocument = await _Service.GetMaintenanceDocumentById(id);
+                if (existingDocument == null)
                 {
                     return NotFound("Maintenance document does not exist");
                 }
 
+                // Delete the file from Cloudinary if it exists
+                if (!string.IsNullOrEmpty(existingDocument.file_url))
+                {
+                    var publicId = Path.GetFileNameWithoutExtension(new Uri(existingDocument.file_url).AbsolutePath);
+                    var deletionParams = new DeletionParams(publicId);
+                    var deletionResult = await _Cloudinary.DestroyAsync(deletionParams);
+                    if (deletionResult.Result != "ok")
+                    {
+                        Console.WriteLine($"Failed to delete file: {deletionResult.Error?.Message}");
+                        // Log the error but proceed with deletion
+                    }
+                }
+
+                // Delete the maintenance document from the database
                 var result = await _Service.DeleteMaintenanceDocument(id);
                 if (!result)
                 {
@@ -237,8 +280,58 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "An unexpected error occurred.");
+                return StatusCode(500, "An unexpected error occurred: " + ex.Message);
             }
         }
+
+        [HttpDelete("MaintenanceId/{id}")]
+        public async Task<ActionResult> DeleteMaintenanceDocumentByMaintenanceId(int id)
+        {
+            try
+            {
+                var existingDocument = await _Service.GetMaintenanceDocumentByMaintenanceId(id);
+                if (existingDocument == null)
+                {
+                    return NotFound("Maintenance document does not exist");
+                }
+
+                foreach( var currentDocument in existingDocument)
+                {
+                    // Delete the file from Cloudinary if it exists
+                    if (!string.IsNullOrEmpty(currentDocument.file_url))
+                    {
+                        var publicId = Path.GetFileNameWithoutExtension(new Uri(currentDocument.file_url).AbsolutePath);
+                        var deletionParams = new DeletionParams(publicId);
+                        var deletionResult = await _Cloudinary.DestroyAsync(deletionParams);
+                        if (deletionResult.Result != "ok")
+                        {
+                            Console.WriteLine($"Failed to delete file: {deletionResult.Error?.Message}");
+                            // Log the error but proceed with deletion
+                        }
+                    }
+                }
+
+                // Delete the maintenance document from the database
+                var result = await _Service.DeleteMaintenanceDocumentByMaintenanceId(id);
+                if (!result)
+                {
+                    return BadRequest("Failed to delete maintenance document.");
+                }
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("referenced by other records"))
+                {
+                    return Conflict(ex.Message);
+                }
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
     }
 }

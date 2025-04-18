@@ -48,6 +48,21 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             }
         }
 
+        [HttpGet("AssetId/{id}")]
+        public async Task<ActionResult> GetMaintenanceHistoryByAssetId(int id)
+        {
+            try
+            {
+                var costs = await _Service.GetMaintenanceHistoryByAssetId(id);
+                return Ok(costs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+
         [HttpPost]
         public async Task<ActionResult> CreateMaintenanceHistory([FromBody] MaintenanceHistoryRequest request)
         {
