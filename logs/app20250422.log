@@ -1,0 +1,90 @@
+2025-04-22 11:13:44 [INF] User profile is available. Using 'C:\Users\Lenovo\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-04-22 11:13:45 [INF] Now listening on: https://localhost:7030
+2025-04-22 11:13:45 [INF] Now listening on: http://localhost:5101
+2025-04-22 11:13:45 [INF] Application started. Press Ctrl+C to shut down.
+2025-04-22 11:13:45 [INF] Hosting environment: Development
+2025-04-22 11:13:45 [INF] Content root path: C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management 2\RoadInfrastructureAssetManagementApi2
+2025-04-22 11:13:45 [INF] Request starting HTTP/2 GET https://localhost:7030/swagger/index.html - null null
+2025-04-22 11:13:46 [INF] Request starting HTTP/2 GET https://localhost:7030/_framework/aspnetcore-browser-refresh.js - null null
+2025-04-22 11:13:46 [INF] Request finished HTTP/2 GET https://localhost:7030/swagger/index.html - 200 null text/html;charset=utf-8 299.0004ms
+2025-04-22 11:13:46 [INF] Request finished HTTP/2 GET https://localhost:7030/_framework/aspnetcore-browser-refresh.js - 200 13810 application/javascript; charset=utf-8 12.7222ms
+2025-04-22 11:13:46 [INF] Request starting HTTP/2 GET https://localhost:7030/_vs/browserLink - null null
+2025-04-22 11:13:46 [INF] Request finished HTTP/2 GET https://localhost:7030/_vs/browserLink - 200 null text/javascript; charset=UTF-8 184.0259ms
+2025-04-22 11:13:46 [INF] Request starting HTTP/2 GET https://localhost:7030/swagger/v1/swagger.json - null null
+2025-04-22 11:13:46 [INF] Request finished HTTP/2 GET https://localhost:7030/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 179.8141ms
+2025-04-22 11:23:07 [INF] Request starting HTTP/1.1 POST https://localhost:7030/api/users/login - application/json; charset=utf-8 null
+2025-04-22 11:23:07 [INF] Executing endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.UsersController.Login (Road Infrastructure Asset Management2)'
+2025-04-22 11:23:07 [INF] Route matched with {action = "Login", controller = "Users"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult] Login(Road_Infrastructure_Asset_Management_2.Model.Request.LoginRequest) on controller Road_Infrastructure_Asset_Management_2.Controllers.UsersController (Road Infrastructure Asset Management2).
+2025-04-22 11:23:07 [INF] Received login request for username TeoNao
+2025-04-22 11:23:08 [INF] Updated refresh token for user with ID 1 successfully
+2025-04-22 11:23:08 [INF] User with username TeoNao logged in successfully
+2025-04-22 11:23:08 [INF] User with username TeoNao logged in successfully
+2025-04-22 11:23:08 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType1`4[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-04-22 11:23:08 [INF] Executed action Road_Infrastructure_Asset_Management_2.Controllers.UsersController.Login (Road Infrastructure Asset Management2) in 999.7228ms
+2025-04-22 11:23:08 [INF] Executed endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.UsersController.Login (Road Infrastructure Asset Management2)'
+2025-04-22 11:23:08 [INF] Request finished HTTP/1.1 POST https://localhost:7030/api/users/login - 200 399 application/json; charset=utf-8 1103.4235ms
+2025-04-22 11:23:14 [INF] Request starting HTTP/1.1 GET https://localhost:7030/api/assetCagetories - null null
+2025-04-22 11:23:14 [INF] Executing endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAllAssetCagetories (Road Infrastructure Asset Management2)'
+2025-04-22 11:23:14 [INF] Route matched with {action = "GetAllAssetCagetories", controller = "AssetCagetories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult] GetAllAssetCagetories() on controller Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController (Road Infrastructure Asset Management2).
+2025-04-22 11:23:14 [INF] Received request to get all asset categories
+2025-04-22 11:23:14 [INF] Retrieved 1 asset categories successfully
+2025-04-22 11:23:14 [INF] Returned 1 asset categories
+2025-04-22 11:23:14 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[Road_Infrastructure_Asset_Management_2.Model.Response.AssetCategoriesResponse, Road Infrastructure Asset Management2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-04-22 11:23:14 [INF] Executed action Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAllAssetCagetories (Road Infrastructure Asset Management2) in 33.5758ms
+2025-04-22 11:23:14 [INF] Executed endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAllAssetCagetories (Road Infrastructure Asset Management2)'
+2025-04-22 11:23:14 [INF] Request finished HTTP/1.1 GET https://localhost:7030/api/assetCagetories - 200 843 application/json; charset=utf-8 78.7702ms
+2025-04-22 11:23:15 [INF] Request starting HTTP/1.1 GET https://localhost:7030/api/assetCagetories/1 - null null
+2025-04-22 11:23:15 [INF] Executing endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAssetCagetoriesById (Road Infrastructure Asset Management2)'
+2025-04-22 11:23:15 [INF] Route matched with {action = "GetAssetCagetoriesById", controller = "AssetCagetories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult] GetAssetCagetoriesById(Int32) on controller Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController (Road Infrastructure Asset Management2).
+2025-04-22 11:23:15 [INF] Received request to get asset category with ID 1
+2025-04-22 11:23:15 [INF] Retrieved asset category with ID 1 successfully
+2025-04-22 11:23:15 [INF] Returned asset category with ID 1
+2025-04-22 11:23:16 [INF] Executing OkObjectResult, writing value of type 'Road_Infrastructure_Asset_Management_2.Model.Response.AssetCategoriesResponse'.
+2025-04-22 11:23:16 [INF] Executed action Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAssetCagetoriesById (Road Infrastructure Asset Management2) in 11.0087ms
+2025-04-22 11:23:16 [INF] Executed endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAssetCagetoriesById (Road Infrastructure Asset Management2)'
+2025-04-22 11:23:16 [INF] Request finished HTTP/1.1 GET https://localhost:7030/api/assetCagetories/1 - 200 841 application/json; charset=utf-8 25.3397ms
+2025-04-22 13:40:12 [INF] User profile is available. Using 'C:\Users\Lenovo\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-04-22 13:40:13 [INF] Now listening on: https://localhost:7030
+2025-04-22 13:40:13 [INF] Now listening on: http://localhost:5101
+2025-04-22 13:40:13 [INF] Application started. Press Ctrl+C to shut down.
+2025-04-22 13:40:13 [INF] Hosting environment: Development
+2025-04-22 13:40:13 [INF] Content root path: C:\Users\Lenovo\source\repos\Road Infrastructure Asset Management 2\RoadInfrastructureAssetManagementApi2
+2025-04-22 13:40:13 [INF] Request starting HTTP/2 GET https://localhost:7030/swagger/index.html - null null
+2025-04-22 13:40:13 [INF] Request finished HTTP/2 GET https://localhost:7030/swagger/index.html - 200 null text/html;charset=utf-8 198.3265ms
+2025-04-22 13:40:13 [INF] Request starting HTTP/2 GET https://localhost:7030/_framework/aspnetcore-browser-refresh.js - null null
+2025-04-22 13:40:13 [INF] Request finished HTTP/2 GET https://localhost:7030/_framework/aspnetcore-browser-refresh.js - 200 13810 application/javascript; charset=utf-8 7.4944ms
+2025-04-22 13:40:13 [INF] Request starting HTTP/2 GET https://localhost:7030/_vs/browserLink - null null
+2025-04-22 13:40:13 [INF] Request finished HTTP/2 GET https://localhost:7030/_vs/browserLink - 200 null text/javascript; charset=UTF-8 46.0797ms
+2025-04-22 13:40:13 [INF] Request starting HTTP/2 GET https://localhost:7030/swagger/v1/swagger.json - null null
+2025-04-22 13:40:14 [INF] Request finished HTTP/2 GET https://localhost:7030/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 109.4992ms
+2025-04-22 13:40:39 [INF] Request starting HTTP/1.1 POST https://localhost:7030/api/users/login - application/json; charset=utf-8 null
+2025-04-22 13:40:44 [INF] Executing endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.UsersController.Login (Road Infrastructure Asset Management2)'
+2025-04-22 13:40:44 [INF] Route matched with {action = "Login", controller = "Users"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult] Login(Road_Infrastructure_Asset_Management_2.Model.Request.LoginRequest) on controller Road_Infrastructure_Asset_Management_2.Controllers.UsersController (Road Infrastructure Asset Management2).
+2025-04-22 13:40:44 [INF] Received login request for username TeoNao
+2025-04-22 13:40:45 [INF] Updated refresh token for user with ID 1 successfully
+2025-04-22 13:40:45 [INF] User with username TeoNao logged in successfully
+2025-04-22 13:40:45 [INF] User with username TeoNao logged in successfully
+2025-04-22 13:40:45 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType1`4[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-04-22 13:40:45 [INF] Executed action Road_Infrastructure_Asset_Management_2.Controllers.UsersController.Login (Road Infrastructure Asset Management2) in 867.0572ms
+2025-04-22 13:40:45 [INF] Executed endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.UsersController.Login (Road Infrastructure Asset Management2)'
+2025-04-22 13:40:45 [INF] Request finished HTTP/1.1 POST https://localhost:7030/api/users/login - 200 399 application/json; charset=utf-8 6339.9566ms
+2025-04-22 13:40:53 [INF] Request starting HTTP/1.1 GET https://localhost:7030/api/assetCagetories - null null
+2025-04-22 13:40:53 [INF] Executing endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAllAssetCagetories (Road Infrastructure Asset Management2)'
+2025-04-22 13:40:53 [INF] Route matched with {action = "GetAllAssetCagetories", controller = "AssetCagetories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult] GetAllAssetCagetories() on controller Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController (Road Infrastructure Asset Management2).
+2025-04-22 13:40:53 [INF] Received request to get all asset categories
+2025-04-22 13:40:53 [INF] Retrieved 1 asset categories successfully
+2025-04-22 13:40:53 [INF] Returned 1 asset categories
+2025-04-22 13:40:53 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[Road_Infrastructure_Asset_Management_2.Model.Response.AssetCategoriesResponse, Road Infrastructure Asset Management2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-04-22 13:40:53 [INF] Executed action Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAllAssetCagetories (Road Infrastructure Asset Management2) in 31.0669ms
+2025-04-22 13:40:53 [INF] Executed endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAllAssetCagetories (Road Infrastructure Asset Management2)'
+2025-04-22 13:40:53 [INF] Request finished HTTP/1.1 GET https://localhost:7030/api/assetCagetories - 200 843 application/json; charset=utf-8 80.5211ms
+2025-04-22 13:40:55 [INF] Request starting HTTP/1.1 GET https://localhost:7030/api/assetCagetories/1 - null null
+2025-04-22 13:40:55 [INF] Executing endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAssetCagetoriesById (Road Infrastructure Asset Management2)'
+2025-04-22 13:40:55 [INF] Route matched with {action = "GetAssetCagetoriesById", controller = "AssetCagetories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.ActionResult] GetAssetCagetoriesById(Int32) on controller Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController (Road Infrastructure Asset Management2).
+2025-04-22 13:40:55 [INF] Received request to get asset category with ID 1
+2025-04-22 13:40:55 [INF] Retrieved asset category with ID 1 successfully
+2025-04-22 13:40:55 [INF] Returned asset category with ID 1
+2025-04-22 13:40:55 [INF] Executing OkObjectResult, writing value of type 'Road_Infrastructure_Asset_Management_2.Model.Response.AssetCategoriesResponse'.
+2025-04-22 13:40:55 [INF] Executed action Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAssetCagetoriesById (Road Infrastructure Asset Management2) in 15.3995ms
+2025-04-22 13:40:55 [INF] Executed endpoint 'Road_Infrastructure_Asset_Management_2.Controllers.AssetCagetoriesController.GetAssetCagetoriesById (Road Infrastructure Asset Management2)'
+2025-04-22 13:40:55 [INF] Request finished HTTP/1.1 GET https://localhost:7030/api/assetCagetories/1 - 200 841 application/json; charset=utf-8 28.8703ms

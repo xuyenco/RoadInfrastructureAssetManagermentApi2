@@ -9,9 +9,24 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using CloudinaryDotNet;
 using dotenv.net;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//Serilog for logging
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    configuration
+        .WriteTo.Console() // Ghi log ra console (tùy chọn, hữu ích khi debug)
+        .WriteTo.File(
+            path: "logs/app.log", // Đường dẫn file log
+            rollingInterval: RollingInterval.Day, // Tạo file mới mỗi ngày (app-20250421.log)
+            fileSizeLimitBytes: 10_000_000, // Giới hạn 10MB mỗi file
+            rollOnFileSizeLimit: true, // Tạo file mới nếu vượt kích thước
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+        )
+        .MinimumLevel.Information(); // Ghi log từ mức Information trở lên
+});
 //pgnsql
 var connectionString = builder.Configuration.GetConnectionString("PostgreDB");
 if (string.IsNullOrEmpty(connectionString))

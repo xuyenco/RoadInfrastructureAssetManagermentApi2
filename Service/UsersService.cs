@@ -1,4 +1,5 @@
-﻿using Npgsql;
+﻿using Microsoft.Extensions.Logging; 
+using Npgsql;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
@@ -10,10 +11,12 @@ namespace Road_Infrastructure_Asset_Management_2.Service
     {
         private readonly string _connectionString;
         private static readonly string[] ValidRoles = { "admin", "manager", "technician", "inspector", "supervisor" };
+        private readonly ILogger<UsersService> _logger; 
 
-        public UsersService(string connectionString)
+        public UsersService(string connectionString, ILogger<UsersService> logger) 
         {
             _connectionString = connectionString;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<UsersResponse>> GetAllUsers()
@@ -40,6 +43,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 role = reader.GetString(reader.GetOrdinal("role")),
                                 department_company_unit = reader.IsDBNull(reader.GetOrdinal("department_company_unit")) ? null : reader.GetString(reader.GetOrdinal("department_company_unit")),
                                 image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
+                                image_name = reader.IsDBNull(reader.GetOrdinal("image_name")) ? null : reader.GetString(reader.GetOrdinal("image_name")),
+                                image_public_id = reader.IsDBNull(reader.GetOrdinal("image_public_id")) ? null : reader.GetString(reader.GetOrdinal("image_public_id")),
                                 created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
                                 refresh_token = reader.IsDBNull(reader.GetOrdinal("refresh_token")) ? null : reader.GetString(reader.GetOrdinal("refresh_token")),
                                 refresh_token_expiry = reader.IsDBNull(reader.GetOrdinal("refresh_token_expiry")) ? null : reader.GetDateTime(reader.GetOrdinal("refresh_token_expiry"))
@@ -47,16 +52,18 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                             users.Add(user);
                         }
                     }
+                    _logger.LogInformation("Retrieved {Count} users successfully", users.Count); 
+                    return users;
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to retrieve users from database");
                     throw new InvalidOperationException("Failed to retrieve users from database.", ex);
                 }
                 finally
                 {
                     await _connection.CloseAsync();
                 }
-                return users;
             }
         }
 
@@ -76,7 +83,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         {
                             if (await reader.ReadAsync())
                             {
-                                return new UsersResponse
+                                var user = new UsersResponse
                                 {
                                     user_id = reader.GetInt32(reader.GetOrdinal("user_id")),
                                     username = reader.GetString(reader.GetOrdinal("username")),
@@ -85,17 +92,23 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     role = reader.GetString(reader.GetOrdinal("role")),
                                     department_company_unit = reader.IsDBNull(reader.GetOrdinal("department_company_unit")) ? null : reader.GetString(reader.GetOrdinal("department_company_unit")),
                                     image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
+                                    image_name = reader.IsDBNull(reader.GetOrdinal("image_name")) ? null : reader.GetString(reader.GetOrdinal("image_name")),
+                                    image_public_id = reader.IsDBNull(reader.GetOrdinal("image_public_id")) ? null : reader.GetString(reader.GetOrdinal("image_public_id")),
                                     created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
                                     refresh_token = reader.IsDBNull(reader.GetOrdinal("refresh_token")) ? null : reader.GetString(reader.GetOrdinal("refresh_token")),
                                     refresh_token_expiry = reader.IsDBNull(reader.GetOrdinal("refresh_token_expiry")) ? null : reader.GetDateTime(reader.GetOrdinal("refresh_token_expiry"))
                                 };
+                                _logger.LogInformation("Retrieved user with ID {UserId} successfully", id); 
+                                return user;
                             }
+                            _logger.LogWarning("User with ID {UserId} not found", id); 
                             return null;
                         }
                     }
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to retrieve user with ID {UserId}", id); 
                     throw new InvalidOperationException($"Failed to retrieve user with ID {id}.", ex);
                 }
                 finally
@@ -116,8 +129,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO users 
-                (username, password, full_name, email, role, department_company_unit, image_url)
-                VALUES (@username, @password, @full_name, @email, @role, @department_company_unit, @image_url)
+                (username, password, full_name, email, role, department_company_unit, image_url, image_name, image_public_id)
+                VALUES (@username, @password, @full_name, @email, @role, @department_company_unit, @image_url, @image_name, @image_public_id)
                 RETURNING user_id";
 
                 try
@@ -131,7 +144,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@role", entity.role);
                         cmd.Parameters.AddWithValue("@department_company_unit", (object)entity.department_company_unit ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@image_url", (object)entity.image_url ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_name", (object)entity.image_name ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_public_id", (object)entity.image_public_id ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
+                        _logger.LogInformation("Created user with ID {UserId} successfully", newId); 
                         return await GetUserById(newId);
                     }
                 }
@@ -140,14 +156,22 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     if (ex.SqlState == "23505") // Unique violation
                     {
                         if (ex.Message.Contains("username"))
+                        {
+                            _logger.LogError(ex, "Failed to create user: Username {Username} is already taken", entity.username); 
                             throw new InvalidOperationException($"Username '{entity.username}' is already taken.", ex);
+                        }
                         if (ex.Message.Contains("email"))
+                        {
+                            _logger.LogError(ex, "Failed to create user: Email {Email} is already in use", entity.email); 
                             throw new InvalidOperationException($"Email '{entity.email}' is already in use.", ex);
+                        }
                     }
                     else if (ex.SqlState == "23514") // Check constraint violation
                     {
+                        _logger.LogError(ex, "Failed to create user: Invalid role {Role}", entity.role); 
                         throw new InvalidOperationException($"Role must be one of: {string.Join(", ", ValidRoles)}.", ex);
                     }
+                    _logger.LogError(ex, "Failed to create user"); 
                     throw new InvalidOperationException("Failed to create user.", ex);
                 }
                 finally
@@ -170,7 +194,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     full_name = @full_name,
                     email = @email,
                     role = @role,
-                    department_company_unit = @department_company_unit
+                    department_company_unit = @department_company_unit,
+                    image_url = @image_url,
+                    image_name = @image_name,
+                    image_public_id = @image_public_id
                 WHERE user_id = @id";
 
                 if (!string.IsNullOrWhiteSpace(entity.password))
@@ -183,7 +210,9 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         email = @email,
                         role = @role,
                         department_company_unit = @department_company_unit,
-                        image_url = @image_url
+                        image_url = @image_url,
+                        image_name = @image_name,
+                        image_public_id = @image_public_id
                     WHERE user_id = @id";
                 }
 
@@ -198,6 +227,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@role", entity.role);
                         cmd.Parameters.AddWithValue("@department_company_unit", (object)entity.department_company_unit ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@image_url", (object)entity.image_url ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_name", (object)entity.image_name ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_public_id", (object)entity.image_public_id ?? DBNull.Value);
 
                         if (!string.IsNullOrWhiteSpace(entity.password))
                         {
@@ -208,8 +239,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
                         {
+                            _logger.LogInformation("Updated user with ID {UserId} successfully", id); 
                             return await GetUserById(id);
                         }
+                        _logger.LogWarning("User with ID {UserId} not found for update", id); 
                         return null;
                     }
                 }
@@ -218,14 +251,22 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     if (ex.SqlState == "23505") // Unique violation
                     {
                         if (ex.Message.Contains("username"))
+                        {
+                            _logger.LogError(ex, "Failed to update user with ID {UserId}: Username {Username} is already taken", id, entity.username); 
                             throw new InvalidOperationException($"Username '{entity.username}' is already taken.", ex);
+                        }
                         if (ex.Message.Contains("email"))
+                        {
+                            _logger.LogError(ex, "Failed to update user with ID {UserId}: Email {Email} is already in use", id, entity.email); 
                             throw new InvalidOperationException($"Email '{entity.email}' is already in use.", ex);
+                        }
                     }
                     else if (ex.SqlState == "23514") // Check constraint violation
                     {
+                        _logger.LogError(ex, "Failed to update user with ID {UserId}: Invalid role {Role}", id, entity.role); 
                         throw new InvalidOperationException($"Role must be one of: {string.Join(", ", ValidRoles)}.", ex);
                     }
+                    _logger.LogError(ex, "Failed to update user with ID {UserId}", id); 
                     throw new InvalidOperationException($"Failed to update user with ID {id}.", ex);
                 }
                 finally
@@ -248,15 +289,23 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         cmd.Parameters.AddWithValue("@id", id);
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
-                        return affectedRows > 0;
+                        if (affectedRows > 0)
+                        {
+                            _logger.LogInformation("Deleted user with ID {UserId} successfully", id);
+                            return true;
+                        }
+                        _logger.LogWarning("User with ID {UserId} not found for deletion", id); 
+                        return false;
                     }
                 }
                 catch (NpgsqlException ex)
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
+                        _logger.LogError(ex, "Failed to delete user with ID {UserId}: User is referenced by other records", id); 
                         throw new InvalidOperationException($"Cannot delete user with ID {id} because it is referenced by other records (e.g., tasks).", ex);
                     }
+                    _logger.LogError(ex, "Failed to delete user with ID {UserId}", id); 
                     throw new InvalidOperationException($"Failed to delete user with ID {id}.", ex);
                 }
                 finally
@@ -270,6 +319,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
         {
             if (string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Password))
             {
+                _logger.LogWarning("Login failed: Username or password is empty"); 
                 throw new ArgumentException("Username and password are required.");
             }
 
@@ -309,15 +359,18 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     userResponse.refresh_token_expiry = expiry;
 
                                     await UpdateRefreshToken(userResponse.user_id, refreshToken, expiry);
+                                    _logger.LogInformation("User with username {Username} logged in successfully", user.Username); 
                                     return userResponse;
                                 }
                             }
+                            _logger.LogWarning("Login failed: Invalid username or password for username {Username}", user.Username); 
                             return null; // User not found or password mismatch
                         }
                     }
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to process login request for username {Username}", user.Username); // Log lỗi
                     throw new InvalidOperationException("Failed to process login request.", ex);
                 }
                 finally
@@ -331,6 +384,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
         {
             if (string.IsNullOrWhiteSpace(refreshToken))
             {
+                _logger.LogWarning("Refresh token failed: Token is empty");
                 throw new ArgumentException("Refresh token is required.");
             }
 
@@ -369,14 +423,17 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 user.refresh_token_expiry = expiry;
 
                                 await UpdateRefreshToken(user.user_id, newRefreshToken, expiry);
+                                _logger.LogInformation("Refreshed token for user with ID {UserId} successfully", user.user_id);
                                 return user;
                             }
+                            _logger.LogWarning("Refresh token failed: Invalid or expired token");
                             return null; // Refresh token không hợp lệ hoặc hết hạn
                         }
                     }
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to process refresh token"); // Log lỗi
                     throw new InvalidOperationException("Failed to process refresh token.", ex);
                 }
                 finally
@@ -386,7 +443,6 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
         }
 
-        // Phương thức phụ để cập nhật refresh token vào database
         private async Task UpdateRefreshToken(int userId, string refreshToken, DateTime expiry)
         {
             using (var connection = new NpgsqlConnection(_connectionString))
@@ -402,10 +458,12 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@expiry", expiry);
                         cmd.Parameters.AddWithValue("@userId", userId);
                         await cmd.ExecuteNonQueryAsync();
+                        _logger.LogInformation("Updated refresh token for user with ID {UserId} successfully", userId); 
                     }
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to update refresh token for user with ID {UserId}", userId); 
                     throw new InvalidOperationException($"Failed to update refresh token for user ID {userId}.", ex);
                 }
                 finally
@@ -420,18 +478,22 @@ namespace Road_Infrastructure_Asset_Management_2.Service
         {
             if (string.IsNullOrWhiteSpace(entity.username))
             {
+                _logger.LogWarning("Validation failed: Username cannot be empty"); 
                 throw new ArgumentException("Username cannot be empty.");
             }
             if (isCreate && string.IsNullOrWhiteSpace(entity.password))
             {
+                _logger.LogWarning("Validation failed: Password cannot be empty when creating a user"); 
                 throw new ArgumentException("Password cannot be empty when creating a user.");
             }
             if (string.IsNullOrWhiteSpace(entity.role))
             {
+                _logger.LogWarning("Validation failed: Role cannot be empty"); 
                 throw new ArgumentException("Role cannot be empty.");
             }
             if (!ValidRoles.Contains(entity.role))
             {
+                _logger.LogWarning("Validation failed: Invalid role {Role}", entity.role); 
                 throw new ArgumentException($"Role must be one of: {string.Join(", ", ValidRoles)}.");
             }
         }

@@ -1,10 +1,8 @@
-﻿using Npgsql;
+﻿using Microsoft.Extensions.Logging;
+using Npgsql;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Road_Infrastructure_Asset_Management_2.Model.Geometry;
 
@@ -13,10 +11,12 @@ namespace Road_Infrastructure_Asset_Management_2.Service
     public class TasksService : ITasksService
     {
         private readonly string _connectionString;
+        private readonly ILogger<TasksService> _logger;
 
-        public TasksService(string connectionString)
+        public TasksService(string connectionString, ILogger<TasksService> logger)
         {
             _connectionString = connectionString;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<TasksResponse>> GetAllTasks()
@@ -53,16 +53,18 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                             tasks.Add(task);
                         }
                     }
+                    _logger.LogInformation("Retrieved {Count} tasks successfully", tasks.Count);
+                    return tasks;
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to retrieve tasks from database");
                     throw new InvalidOperationException("Failed to retrieve tasks from database.", ex);
                 }
                 finally
                 {
                     await _connection.CloseAsync();
                 }
-                return tasks;
             }
         }
 
@@ -82,7 +84,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         {
                             if (await reader.ReadAsync())
                             {
-                                return new TasksResponse
+                                var task = new TasksResponse
                                 {
                                     task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
                                     task_type = reader.IsDBNull(reader.GetOrdinal("task_type")) ? null : reader.GetString(reader.GetOrdinal("task_type")),
@@ -97,15 +99,18 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     method_summary = reader.IsDBNull(reader.GetOrdinal("method_summary")) ? null : reader.GetString(reader.GetOrdinal("method_summary")),
                                     main_result = reader.IsDBNull(reader.GetOrdinal("main_result")) ? null : reader.GetString(reader.GetOrdinal("main_result")),
                                     created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
-                                   
                                 };
+                                _logger.LogInformation("Retrieved task with ID {TaskId} successfully", id);
+                                return task;
                             }
+                            _logger.LogWarning("Task with ID {TaskId} not found", id);
                             return null;
                         }
                     }
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to retrieve task with ID {TaskId}", id);
                     throw new InvalidOperationException($"Failed to retrieve task with ID {id}.", ex);
                 }
                 finally
@@ -140,10 +145,11 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@start_date", (object)entity.start_date ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@end_date", (object)entity.end_date ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@execution_unit_id", (object)entity.execution_unit_id ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@supervisor_id", (object)entity.supervisor_id ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@method_summary", (object)entity.method_summary ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@main_result", (object)entity.main_result ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@supervisor_id", (object)entity.supervisor_id ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
+                        _logger.LogInformation("Created task with ID {TaskId} successfully", newId);
                         return await GetTaskById(newId);
                     }
                 }
@@ -152,14 +158,22 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
                         if (ex.Message.Contains("execution_unit_id"))
+                        {
+                            _logger.LogError(ex, "Failed to create task: Invalid execution_unit_id {ExecutionUnitId}", entity.execution_unit_id);
                             throw new InvalidOperationException($"User ID {entity.execution_unit_id} does not exist.", ex);
+                        }
                         if (ex.Message.Contains("supervisor_id"))
+                        {
+                            _logger.LogError(ex, "Failed to create task: Invalid supervisor_id {SupervisorId}", entity.supervisor_id);
                             throw new InvalidOperationException($"User ID {entity.supervisor_id} does not exist.", ex);
+                        }
                     }
                     else if (ex.SqlState == "22023") // Invalid GeoJSON
                     {
+                        _logger.LogError(ex, "Failed to create task: Invalid GeoJSON format");
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
+                    _logger.LogError(ex, "Failed to create task");
                     throw new InvalidOperationException("Failed to create task.", ex);
                 }
                 finally
@@ -211,8 +225,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
                         {
+                            _logger.LogInformation("Updated task with ID {TaskId} successfully", id);
                             return await GetTaskById(id);
                         }
+                        _logger.LogWarning("Task with ID {TaskId} not found for update", id);
                         return null;
                     }
                 }
@@ -221,15 +237,23 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
                         if (ex.Message.Contains("execution_unit_id"))
+                        {
+                            _logger.LogError(ex, "Failed to update task with ID {TaskId}: Invalid execution_unit_id {ExecutionUnitId}", id, entity.execution_unit_id);
                             throw new InvalidOperationException($"User ID {entity.execution_unit_id} does not exist.", ex);
+                        }
                         if (ex.Message.Contains("supervisor_id"))
+                        {
+                            _logger.LogError(ex, "Failed to update task with ID {TaskId}: Invalid supervisor_id {SupervisorId}", id, entity.supervisor_id);
                             throw new InvalidOperationException($"User ID {entity.supervisor_id} does not exist.", ex);
+                        }
                     }
                     else if (ex.SqlState == "22023") // Invalid GeoJSON
                     {
+                        _logger.LogError(ex, "Failed to update task with ID {TaskId}: Invalid GeoJSON format", id);
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
-                    throw new InvalidOperationException($"Failed to update task with ID {id}: {ex}");
+                    _logger.LogError(ex, "Failed to update task with ID {TaskId}", id);
+                    throw new InvalidOperationException($"Failed to update task with ID {id}.", ex);
                 }
                 finally
                 {
@@ -251,15 +275,23 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         cmd.Parameters.AddWithValue("@id", id);
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
-                        return affectedRows > 0;
+                        if (affectedRows > 0)
+                        {
+                            _logger.LogInformation("Deleted task with ID {TaskId} successfully", id);
+                            return true;
+                        }
+                        _logger.LogWarning("Task with ID {TaskId} not found for deletion", id);
+                        return false;
                     }
                 }
                 catch (NpgsqlException ex)
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
+                        _logger.LogError(ex, "Failed to delete task with ID {TaskId}: Task is referenced by other records", id);
                         throw new InvalidOperationException($"Cannot delete task with ID {id} because it is referenced by other records (e.g., costs).", ex);
                     }
+                    _logger.LogError(ex, "Failed to delete task with ID {TaskId}", id);
                     throw new InvalidOperationException($"Failed to delete task with ID {id}.", ex);
                 }
                 finally
@@ -274,14 +306,17 @@ namespace Road_Infrastructure_Asset_Management_2.Service
         {
             if (string.IsNullOrWhiteSpace(entity.task_type))
             {
+                _logger.LogWarning("Validation failed: Task type cannot be empty");
                 throw new ArgumentException("Task type cannot be empty.");
             }
             if (string.IsNullOrWhiteSpace(entity.status))
             {
+                _logger.LogWarning("Validation failed: Status cannot be empty");
                 throw new ArgumentException("Status cannot be empty.");
             }
             if (entity.geometry == null || string.IsNullOrEmpty(entity.geometry.type))
             {
+                _logger.LogWarning("Validation failed: Geometry cannot be null or invalid");
                 throw new ArgumentException("Geometry cannot be null or invalid.");
             }
             try
@@ -290,14 +325,17 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
             catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Validation failed: Invalid GeoJSON format for geometry");
                 throw new ArgumentException("Invalid GeoJSON format for geometry.", ex);
             }
             if (entity.execution_unit_id.HasValue && entity.execution_unit_id <= 0)
             {
+                _logger.LogWarning("Validation failed: Execution unit ID must be a positive integer");
                 throw new ArgumentException("Execution unit ID must be a positive integer.");
             }
             if (entity.supervisor_id.HasValue && entity.supervisor_id <= 0)
             {
+                _logger.LogWarning("Validation failed: Supervisor ID must be a positive integer");
                 throw new ArgumentException("Supervisor ID must be a positive integer.");
             }
         }
@@ -310,6 +348,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
             catch (JsonException ex)
             {
+                _logger.LogError(ex, "Failed to parse GeoJSON for {FieldName}", fieldName);
                 throw new InvalidOperationException($"Invalid GeoJSON format for {fieldName}.", ex);
             }
         }

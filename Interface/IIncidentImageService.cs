@@ -11,5 +11,6 @@ namespace Road_Infrastructure_Asset_Management_2.Interface
         Task<IncidentImageResponse?> CreateIncidentImage(IncidentImageRequest entity);
         Task<IncidentImageResponse?> UpdateIncidentImage(int id, IncidentImageRequest entity);
         Task<bool> DeleteIncidentImage(int id);
+        Task<bool> DeleteIncidentImageByIncidentId(int id);
     }
 }

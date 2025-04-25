@@ -1,24 +1,24 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging; 
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Npgsql;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Geometry;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Threading.Tasks;
 
 namespace Road_Infrastructure_Asset_Management_2.Service
 {
     public class AssetsService : IAssetsService
     {
         private readonly string _connectionString;
+        private readonly ILogger<AssetsService> _logger; 
 
-        public AssetsService(string connectionString)
+        public AssetsService(string connectionString, ILogger<AssetsService> logger) 
         {
             _connectionString = connectionString;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<AssetsResponse>> GetAllAssets()
@@ -30,7 +30,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 var sql = @"SELECT asset_id, category_id, ST_AsGeoJSON(geometry) as geometry, asset_name, asset_code, 
                            address, construction_year, operation_year, land_area, floor_area, 
                            original_value, remaining_value, asset_status, installation_unit, 
-                           management_unit, custom_attributes, created_at , image_url
+                           management_unit, custom_attributes, created_at, image_url, image_name, image_public_id
                            FROM assets";
 
                 try
@@ -59,21 +59,25 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 management_unit = reader.IsDBNull(reader.GetOrdinal("management_unit")) ? null : reader.GetString(reader.GetOrdinal("management_unit")),
                                 custom_attributes = reader.IsDBNull(reader.GetOrdinal("custom_attributes")) ? null : JObject.Parse(reader.GetString(reader.GetOrdinal("custom_attributes"))),
                                 created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url"))
+                                image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
+                                image_name = reader.IsDBNull(reader.GetOrdinal("image_name")) ? null : reader.GetString(reader.GetOrdinal("image_name")),
+                                image_public_id = reader.IsDBNull(reader.GetOrdinal("image_public_id")) ? null : reader.GetString(reader.GetOrdinal("image_public_id"))
                             };
                             assets.Add(asset);
                         }
                     }
+                    _logger.LogInformation("Retrieved {Count} assets successfully", assets.Count); 
+                    return assets;
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to retrieve assets from database"); 
                     throw new InvalidOperationException("Failed to retrieve assets from database.", ex);
                 }
                 finally
                 {
                     await _connection.CloseAsync();
                 }
-                return assets;
             }
         }
 
@@ -85,7 +89,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 var sql = @"SELECT asset_id, category_id, ST_AsGeoJSON(geometry) as geometry, asset_name, asset_code, 
                            address, construction_year, operation_year, land_area, floor_area, 
                            original_value, remaining_value, asset_status, installation_unit, 
-                           management_unit, custom_attributes, created_at , image_url
+                           management_unit, custom_attributes, created_at, image_url, image_name, image_public_id
                            FROM assets WHERE asset_id = @id";
 
                 try
@@ -97,7 +101,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         {
                             if (await reader.ReadAsync())
                             {
-                                return new AssetsResponse
+                                var asset = new AssetsResponse
                                 {
                                     asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
                                     category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
@@ -116,15 +120,21 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     management_unit = reader.IsDBNull(reader.GetOrdinal("management_unit")) ? null : reader.GetString(reader.GetOrdinal("management_unit")),
                                     custom_attributes = reader.IsDBNull(reader.GetOrdinal("custom_attributes")) ? null : JObject.Parse(reader.GetString(reader.GetOrdinal("custom_attributes"))),
                                     created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at")),
-                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url"))
+                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
+                                    image_name = reader.IsDBNull(reader.GetOrdinal("image_name")) ? null : reader.GetString(reader.GetOrdinal("image_name")),
+                                    image_public_id = reader.IsDBNull(reader.GetOrdinal("image_public_id")) ? null : reader.GetString(reader.GetOrdinal("image_public_id"))
                                 };
+                                _logger.LogInformation("Retrieved asset with ID {AssetId} successfully", id);
+                                return asset;
                             }
+                            _logger.LogWarning("Asset with ID {AssetId} not found", id);
                             return null;
                         }
                     }
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to retrieve asset with ID {AssetId}", id); 
                     throw new InvalidOperationException($"Failed to retrieve asset with ID {id}.", ex);
                 }
                 finally
@@ -145,10 +155,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 INSERT INTO assets 
                 (category_id, asset_name, asset_code, address, geometry, construction_year, operation_year, 
                  land_area, floor_area, original_value, remaining_value, asset_status, installation_unit, 
-                 management_unit, custom_attributes,image_url)
+                 management_unit, custom_attributes, image_url, image_name, image_public_id)
                 VALUES (@category_id, @asset_name, @asset_code, @address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), 
                         @construction_year, @operation_year, @land_area, @floor_area, @original_value, 
-                        @remaining_value, @asset_status, @installation_unit, @management_unit, @custom_attributes::jsonb, @image_url)
+                        @remaining_value, @asset_status, @installation_unit, @management_unit, @custom_attributes::jsonb, @image_url, @image_name, @image_public_id)
                 RETURNING asset_id";
 
                 try
@@ -170,8 +180,11 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@installation_unit", (object)entity.installation_unit ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@management_unit", (object)entity.management_unit ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@custom_attributes", entity.custom_attributes.ToString());
-                        cmd.Parameters.AddWithValue("@image_url",(object)entity.image_url ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_url", (object)entity.image_url ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_name", (object)entity.image_name ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_public_id", (object)entity.image_public_id ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
+                        _logger.LogInformation("Created asset with ID {AssetId} successfully", newId); // Log thành công
                         return await GetAssetById(newId);
                     }
                 }
@@ -179,20 +192,21 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
+                        _logger.LogError(ex, "Failed to create asset: Invalid category ID {CategoryId}", entity.category_id); 
                         throw new InvalidOperationException($"Category ID {entity.category_id} does not exist.", ex);
                     }
                     else if (ex.SqlState == "22023") // Invalid GeoJSON
                     {
+                        _logger.LogError(ex, "Failed to create asset: Invalid GeoJSON format for geometry"); 
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
                     else if (ex.SqlState == "23514") // CHECK constraint violation
                     {
+                        _logger.LogError(ex, "Failed to create asset: Invalid asset status");
                         throw new InvalidOperationException("Invalid asset status provided.", ex);
                     }
-                    else
-                    {
-                        throw new InvalidOperationException("Failed to create asset.", ex);
-                    }
+                    _logger.LogError(ex, "Failed to create asset");
+                    throw new InvalidOperationException("Failed to create asset.", ex);
                 }
                 finally
                 {
@@ -225,7 +239,9 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     installation_unit = @installation_unit,
                     management_unit = @management_unit,
                     custom_attributes = @custom_attributes::jsonb,
-                    image_url = @image_url
+                    image_url = @image_url,
+                    image_name = @image_name,
+                    image_public_id = @image_public_id
                 WHERE asset_id = @id";
 
                 try
@@ -249,11 +265,15 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@management_unit", (object)entity.management_unit ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@custom_attributes", entity.custom_attributes.ToString());
                         cmd.Parameters.AddWithValue("@image_url", (object)entity.image_url ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_name", (object)entity.image_name ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@image_public_id", (object)entity.image_public_id ?? DBNull.Value);
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
                         {
+                            _logger.LogInformation("Updated asset with ID {AssetId} successfully", id); 
                             return await GetAssetById(id);
                         }
+                        _logger.LogWarning("Asset with ID {AssetId} not found for update", id);
                         return null;
                     }
                 }
@@ -261,20 +281,21 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
+                        _logger.LogError(ex, "Failed to update asset with ID {AssetId}: Invalid category ID {CategoryId}", id, entity.category_id); 
                         throw new InvalidOperationException($"Category ID {entity.category_id} does not exist.", ex);
                     }
                     else if (ex.SqlState == "22023") // Invalid GeoJSON
                     {
+                        _logger.LogError(ex, "Failed to update asset with ID {AssetId}: Invalid GeoJSON format for geometry");
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
                     else if (ex.SqlState == "23514") // CHECK constraint violation
                     {
+                        _logger.LogError(ex, "Failed to update asset with ID {AssetId}: Invalid asset status");
                         throw new InvalidOperationException("Invalid asset status provided.", ex);
                     }
-                    else
-                    {
-                        throw new InvalidOperationException($"Failed to update asset with ID {id}.", ex);
-                    }
+                    _logger.LogError(ex, "Failed to update asset with ID {AssetId}"); 
+                    throw new InvalidOperationException($"Failed to update asset with ID {id}.", ex);
                 }
                 finally
                 {
@@ -296,15 +317,23 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         cmd.Parameters.AddWithValue("@id", id);
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
-                        return affectedRows > 0;
+                        if (affectedRows > 0)
+                        {
+                            _logger.LogInformation("Deleted asset with ID {AssetId} successfully", id); // Log thành công
+                            return true;
+                        }
+                        _logger.LogWarning("Asset with ID {AssetId} not found for deletion", id); // Log không tìm thấy
+                        return false;
                     }
                 }
                 catch (NpgsqlException ex)
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
+                        _logger.LogError(ex, "Failed to delete asset with ID {AssetId}: Referenced by other records"); // Log lỗi khóa ngoại
                         throw new InvalidOperationException($"Cannot delete asset with ID {id} because it is referenced by other records.", ex);
                     }
+                    _logger.LogError(ex, "Failed to delete asset with ID {AssetId}"); // Log lỗi chung
                     throw new InvalidOperationException($"Failed to delete asset with ID {id}.", ex);
                 }
                 finally
@@ -319,10 +348,12 @@ namespace Road_Infrastructure_Asset_Management_2.Service
         {
             if (entity.category_id <= 0)
             {
+                _logger.LogWarning("Validation failed: Category ID must be a positive integer"); // Log lỗi validation
                 throw new ArgumentException("Category ID must be a positive integer.");
             }
             if (entity.geometry == null || string.IsNullOrEmpty(entity.geometry.type))
             {
+                _logger.LogWarning("Validation failed: Geometry cannot be null or invalid"); // Log lỗi validation
                 throw new ArgumentException("Geometry cannot be null or invalid.");
             }
             try
@@ -331,10 +362,12 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
             catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Validation failed: Invalid GeoJSON format for geometry"); // Log lỗi GeoJSON
                 throw new ArgumentException("Invalid GeoJSON format for geometry.", ex);
             }
             if (entity.custom_attributes == null)
             {
+                _logger.LogWarning("Validation failed: Custom attributes cannot be null"); // Log lỗi validation
                 throw new ArgumentException("Custom attributes cannot be null.");
             }
             try
@@ -343,6 +376,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
             catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Validation failed: Invalid JSON format for custom attributes"); // Log lỗi JSON
                 throw new ArgumentException("Invalid JSON format for custom attributes.", ex);
             }
         }
@@ -351,10 +385,13 @@ namespace Road_Infrastructure_Asset_Management_2.Service
         {
             try
             {
-                return JsonConvert.DeserializeObject<GeoJsonGeometry>(json);
+                var geometry = JsonConvert.DeserializeObject<GeoJsonGeometry>(json);
+                _logger.LogInformation("Parsed GeoJSON for {FieldName} successfully", fieldName); // Log thành công
+                return geometry;
             }
             catch (JsonException ex)
             {
+                _logger.LogError(ex, "Failed to parse GeoJSON for {FieldName}", fieldName); // Log lỗi
                 throw new InvalidOperationException($"Invalid GeoJSON format for {fieldName}.", ex);
             }
         }

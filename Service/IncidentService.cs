@@ -1,22 +1,22 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Npgsql;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Geometry;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Road_Infrastructure_Asset_Management_2.Service
 {
     public class IncidentService : IIncidentsService
     {
         private readonly string _connectionString;
+        private readonly ILogger<IncidentService> _logger; 
 
-        public IncidentService(string connectionString)
+        public IncidentService(string connectionString, ILogger<IncidentService> logger) 
         {
             _connectionString = connectionString;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<IncidentsResponse>> GetAllIncidents()
@@ -43,22 +43,24 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 severity_level = reader.IsDBNull(reader.GetOrdinal("severity_level")) ? null : reader.GetString(reader.GetOrdinal("severity_level")),
                                 damage_level = reader.IsDBNull(reader.GetOrdinal("damage_level")) ? null : reader.GetString(reader.GetOrdinal("damage_level")),
                                 processing_status = reader.IsDBNull(reader.GetOrdinal("processing_status")) ? null : reader.GetString(reader.GetOrdinal("processing_status")),
-                                task_id = reader.IsDBNull (reader.GetOrdinal("task_id")) ? null : reader.GetInt32 (reader.GetOrdinal("task_id")),
+                                task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
                                 created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             incidents.Add(incident);
                         }
                     }
+                    _logger.LogInformation("Retrieved {Count} incidents successfully", incidents.Count);
+                    return incidents;
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to retrieve incidents from database"); 
                     throw new InvalidOperationException($"Failed to retrieve incidents from database: {ex}", ex);
                 }
                 finally
                 {
                     await _connection.CloseAsync();
                 }
-                return incidents;
             }
         }
 
@@ -78,7 +80,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         {
                             if (await reader.ReadAsync())
                             {
-                                return new IncidentsResponse
+                                var incident = new IncidentsResponse
                                 {
                                     incident_id = reader.GetInt32(reader.GetOrdinal("incident_id")),
                                     address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
@@ -90,14 +92,18 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
                                     created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
+                                _logger.LogInformation("Retrieved incident with ID {IncidentId} successfully", id);
+                                return incident;
                             }
+                            _logger.LogWarning("Incident with ID {IncidentId} not found", id); 
                             return null;
                         }
                     }
                 }
                 catch (NpgsqlException ex)
                 {
-                    throw new InvalidOperationException($"Failed to retrieve incident with ID {id} because: {ex}.");
+                    _logger.LogError(ex, "Failed to retrieve incident with ID {IncidentId}", id); 
+                    throw new InvalidOperationException($"Failed to retrieve incident with ID {id}: {ex}.");
                 }
                 finally
                 {
@@ -115,7 +121,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO incidents 
-                (address, geometry, route, severity_level, damage_level, processing_status,task_id)
+                (address, geometry, route, severity_level, damage_level, processing_status, task_id)
                 VALUES (@address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @route, @severity_level, @damage_level, @processing_status, @task_id)
                 RETURNING incident_id";
 
@@ -131,16 +137,19 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@processing_status", entity.processing_status);
                         cmd.Parameters.AddWithValue("@task_id", (object)entity.task_id ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
+                        _logger.LogInformation("Created incident with ID {IncidentId} successfully", newId); 
                         return await GetIncidentById(newId)!;
                     }
                 }
                 catch (NpgsqlException ex)
                 {
-                    if (ex.SqlState == "22023") // Invalid GeoJSON
+                    if (ex.SqlState == "22023") 
                     {
+                        _logger.LogError(ex, "Failed to create incident: Invalid GeoJSON format for geometry");
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
-                    throw new InvalidOperationException($"Failed to create incident because {ex}",ex);
+                    _logger.LogError(ex, "Failed to create incident");
+                    throw new InvalidOperationException($"Failed to create incident because {ex}", ex);
                 }
                 finally
                 {
@@ -183,8 +192,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
                         {
+                            _logger.LogInformation("Updated incident with ID {IncidentId} successfully", id); 
                             return await GetIncidentById(id);
                         }
+                        _logger.LogWarning("Incident with ID {IncidentId} not found for update", id);
                         return null;
                     }
                 }
@@ -192,9 +203,11 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 {
                     if (ex.SqlState == "22023") // Invalid GeoJSON
                     {
+                        _logger.LogError(ex, "Failed to update incident with ID {IncidentId}: Invalid GeoJSON format for geometry", id); 
                         throw new InvalidOperationException("Invalid GeoJSON format for geometry.", ex);
                     }
-                    throw new InvalidOperationException($"Failed to update incident with ID {id} because {ex}.", ex);
+                    _logger.LogError(ex, "Failed to update incident with ID {IncidentId}", id); 
+                    throw new InvalidOperationException($"Failed to update incident with ID {id}: {ex}.", ex);
                 }
                 finally
                 {
@@ -216,15 +229,23 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         cmd.Parameters.AddWithValue("@id", id);
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
-                        return affectedRows > 0;
+                        if (affectedRows > 0)
+                        {
+                            _logger.LogInformation("Deleted incident with ID {IncidentId} successfully", id); 
+                            return true;
+                        }
+                        _logger.LogWarning("Incident with ID {IncidentId} not found for deletion", id);
+                        return false;
                     }
                 }
                 catch (NpgsqlException ex)
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
+                        _logger.LogError(ex, "Failed to delete incident with ID {IncidentId}: Referenced by other records", id); 
                         throw new InvalidOperationException($"Cannot delete incident with ID {id} because it is referenced by other records (e.g., incident_images).", ex);
                     }
+                    _logger.LogError(ex, "Failed to delete incident with ID {IncidentId}", id);
                     throw new InvalidOperationException($"Failed to delete incident with ID {id}.", ex);
                 }
                 finally
@@ -239,6 +260,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
         {
             if (entity.geometry == null || string.IsNullOrEmpty(entity.geometry.type))
             {
+                _logger.LogWarning("Validation failed: Geometry cannot be null or invalid"); 
                 throw new ArgumentException("Geometry cannot be null or invalid.");
             }
             try
@@ -247,18 +269,22 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
             catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Validation failed: Invalid GeoJSON format for geometry");
                 throw new ArgumentException("Invalid GeoJSON format for geometry.", ex);
             }
             if (string.IsNullOrWhiteSpace(entity.severity_level))
             {
+                _logger.LogWarning("Validation failed: Severity level cannot be empty");
                 throw new ArgumentException("Severity level cannot be empty.");
             }
             if (string.IsNullOrWhiteSpace(entity.damage_level))
             {
+                _logger.LogWarning("Validation failed: Damage level cannot be empty"); 
                 throw new ArgumentException("Damage level cannot be empty.");
             }
             if (string.IsNullOrWhiteSpace(entity.processing_status))
             {
+                _logger.LogWarning("Validation failed: Processing status cannot be empty");
                 throw new ArgumentException("Processing status cannot be empty.");
             }
         }
@@ -271,6 +297,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
             catch (JsonException ex)
             {
+                _logger.LogError(ex, "Failed to parse GeoJSON for {FieldName}", fieldName); 
                 throw new InvalidOperationException($"Invalid GeoJSON format for {fieldName}.", ex);
             }
         }

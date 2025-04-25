@@ -1,16 +1,7 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\service\\incidentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:service\\incidentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\controllers\\incidentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:controllers\\incidentscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -18,7 +9,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": -1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -51,32 +42,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "IncidentService.cs",
-              "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\IncidentService.cs",
-              "RelativeDocumentMoniker": "Service\\IncidentService.cs",
-              "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\IncidentService.cs",
-              "RelativeToolTip": "Service\\IncidentService.cs",
-              "ViewState": "AgIAAAEBAAAAAAAAAAAuwAoBAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-18T07:31:22.899Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "IncidentsController.cs",
-              "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Controllers\\IncidentsController.cs",
-              "RelativeDocumentMoniker": "Controllers\\IncidentsController.cs",
-              "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Controllers\\IncidentsController.cs",
-              "RelativeToolTip": "Controllers\\IncidentsController.cs",
-              "ViewState": "AgIAAFMAAAAAAAAAAAAIwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-18T07:31:00Z",
-              "EditorCaption": ""
             }
           ]
         },

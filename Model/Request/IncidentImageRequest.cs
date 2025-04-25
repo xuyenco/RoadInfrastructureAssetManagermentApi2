@@ -4,5 +4,7 @@
     {
         public int incident_id { get; set; }
         public string image_url { get; set; }
+        public string image_public_id { get; set; }
+        public string image_name { get; set; }
     }
 }

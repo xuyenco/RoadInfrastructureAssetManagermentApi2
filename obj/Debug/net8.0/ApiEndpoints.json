@@ -611,6 +611,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.IncidentImagesController",
+    "Method": "DeleteIncidentImageByIncidentId",
+    "RelativePath": "api/IncidentImages/incidentid/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.IncidentsController",
     "Method": "GetAllIncidents",
     "RelativePath": "api/Incidents",

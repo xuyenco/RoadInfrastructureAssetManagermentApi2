@@ -23,5 +23,7 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Response
         public JObject custom_attributes { get; set; }
         public DateTime? created_at { get; set; }
         public string image_url { get; set; }
+        public string image_name { get; set; }
+        public string image_public_id { get; set; }
     }
 }

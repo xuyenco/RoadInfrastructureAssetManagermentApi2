@@ -15,5 +15,7 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Request
         public string role { get; set; } = string.Empty;
         public string department_company_unit { get; set; } = string.Empty;
         public string image_url {  get; set; } = string.Empty;
+        public string image_name {  get; set; } = string.Empty;
+        public string image_public_id { get; set; } = string.Empty;
     }
 }

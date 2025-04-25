@@ -1,20 +1,20 @@
-﻿using Npgsql;
+﻿using Microsoft.Extensions.Logging; 
+using Npgsql;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Road_Infrastructure_Asset_Management_2.Service
 {
     public class CostsService : ICostsService
     {
         private readonly string _connectionString;
+        private readonly ILogger<CostsService> _logger; 
 
-        public CostsService(string connection)
+        public CostsService(string connection, ILogger<CostsService> logger)
         {
-            _connectionString = connection;
+            _connectionString = connection; 
+            _logger = logger;
         }
 
         public async Task<IEnumerable<CostsResponse>> GetAllCosts()
@@ -38,23 +38,25 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
                                 cost_type = reader.GetString(reader.GetOrdinal("cost_type")),
                                 amount = reader.GetDouble(reader.GetOrdinal("amount")),
-                                description = reader.GetString(reader.GetOrdinal("description")), 
+                                description = reader.GetString(reader.GetOrdinal("description")),
                                 date_incurred = reader.GetDateTime(reader.GetOrdinal("date_incurred")),
                                 created_at = reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             costs.Add(cost);
                         }
                     }
+                    _logger.LogInformation("Retrieved {Count} costs successfully", costs.Count); 
+                    return costs;
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to retrieve costs from database"); 
                     throw new InvalidOperationException("Failed to retrieve costs from database.", ex);
                 }
                 finally
                 {
-                    await _connection.CloseAsync(); 
+                    await _connection.CloseAsync();
                 }
-                return costs;
             }
         }
 
@@ -74,23 +76,27 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         {
                             if (await reader.ReadAsync())
                             {
-                                return new CostsResponse
+                                var cost = new CostsResponse
                                 {
                                     cost_id = reader.GetInt32(reader.GetOrdinal("cost_id")),
                                     task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
                                     cost_type = reader.GetString(reader.GetOrdinal("cost_type")),
                                     amount = reader.GetDouble(reader.GetOrdinal("amount")),
-                                    description = reader.GetString(reader.GetOrdinal("description")), 
+                                    description = reader.GetString(reader.GetOrdinal("description")),
                                     date_incurred = reader.GetDateTime(reader.GetOrdinal("date_incurred")),
                                     created_at = reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
+                                _logger.LogInformation("Retrieved cost with ID {CostId} successfully", id); 
+                                return cost;
                             }
+                            _logger.LogWarning("Cost with ID {CostId} not found", id); 
                             return null;
                         }
                     }
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to retrieve cost with ID {CostId}", id); 
                     throw new InvalidOperationException($"Failed to retrieve cost with ID {id}.", ex);
                 }
                 finally
@@ -107,6 +113,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             // Trích xuất fiscal_year từ date_incurred
             if (!entity.date_incurred.HasValue)
             {
+                _logger.LogWarning("Validation failed: Date incurred cannot be null"); 
                 throw new ArgumentException("Date incurred cannot be null.");
             }
             int fiscalYear = entity.date_incurred.Value.Year;
@@ -133,6 +140,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@description", entity.description ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@date_incurred", entity.date_incurred);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
+                        _logger.LogInformation("Created cost with ID {CostId} successfully", newId);
                         return await GetCostById(newId);
                     }
                 }
@@ -140,8 +148,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
+                        _logger.LogError(ex, "Failed to create cost: Invalid task ID {TaskId}", entity.task_id); 
                         throw new InvalidOperationException($"Task ID {entity.task_id} does not exist.", ex);
                     }
+                    _logger.LogError(ex, "Failed to create cost"); 
                     throw new InvalidOperationException("Failed to create cost.", ex);
                 }
                 finally
@@ -158,6 +168,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             // Trích xuất fiscal_year từ date_incurred
             if (!entity.date_incurred.HasValue)
             {
+                _logger.LogWarning("Validation failed: Date incurred cannot be null"); 
                 throw new ArgumentException("Date incurred cannot be null.");
             }
             int fiscalYear = entity.date_incurred.Value.Year;
@@ -191,8 +202,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)
                         {
+                            _logger.LogInformation("Updated cost with ID {CostId} successfully", id); 
                             return await GetCostById(id);
                         }
+                        _logger.LogWarning("Cost with ID {CostId} not found for update", id); 
                         return null;
                     }
                 }
@@ -200,8 +213,10 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 {
                     if (ex.SqlState == "23503") // Foreign key violation
                     {
+                        _logger.LogError(ex, "Failed to update cost with ID {CostId}: Invalid task ID {TaskId}", id, entity.task_id); 
                         throw new InvalidOperationException($"Task ID {entity.task_id} does not exist.", ex);
                     }
+                    _logger.LogError(ex, "Failed to update cost with ID {CostId}", id); 
                     throw new InvalidOperationException($"Failed to update cost with ID {id}.", ex);
                 }
                 finally
@@ -224,11 +239,18 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         cmd.Parameters.AddWithValue("@id", id);
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
-                        return affectedRows > 0;
+                        if (affectedRows > 0)
+                        {
+                            _logger.LogInformation("Deleted cost with ID {CostId} successfully", id); 
+                            return true;
+                        }
+                        _logger.LogWarning("Cost with ID {CostId} not found for deletion", id); 
+                        return false;
                     }
                 }
                 catch (NpgsqlException ex)
                 {
+                    _logger.LogError(ex, "Failed to delete cost with ID {CostId}", id); 
                     throw new InvalidOperationException($"Failed to delete cost with ID {id}.", ex);
                 }
                 finally
@@ -262,9 +284,16 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     // Kiểm tra nếu tổng remaining_amount không đủ để chi trả newAmount
                     if (totalRemainingAmount < newAmount)
                     {
+                        _logger.LogError("Budget limit exceeded for fiscal year {FiscalYear}: Remaining {RemainingAmount}, Requested {NewAmount}", fiscalYear, totalRemainingAmount, newAmount); 
                         throw new InvalidOperationException(
                             $"Tổng tiền quỹ còn lại ({totalRemainingAmount}) không đủ cho số tiền cần tiêu ({newAmount}) trong năm {fiscalYear}.");
                     }
+                    _logger.LogInformation("Budget check passed for fiscal year {FiscalYear}: Remaining {RemainingAmount}, Requested {NewAmount}", fiscalYear, totalRemainingAmount, newAmount); 
+                }
+                catch (NpgsqlException ex)
+                {
+                    _logger.LogError(ex, "Failed to check budget limit for fiscal year {FiscalYear}", fiscalYear); 
+                    throw new InvalidOperationException($"Failed to check budget limit for fiscal year {fiscalYear}.", ex);
                 }
                 finally
                 {
@@ -278,19 +307,22 @@ namespace Road_Infrastructure_Asset_Management_2.Service
         {
             if (entity.task_id <= 0)
             {
+                _logger.LogWarning("Validation failed: Task ID must be a positive integer"); 
                 throw new ArgumentException("Task ID must be a positive integer.");
             }
             if (string.IsNullOrWhiteSpace(entity.cost_type))
             {
+                _logger.LogWarning("Validation failed: Cost type cannot be empty"); 
                 throw new ArgumentException("Cost type cannot be empty.");
             }
             if (entity.amount < 0)
             {
+                _logger.LogWarning("Validation failed: Amount cannot be negative"); 
                 throw new ArgumentException("Amount cannot be negative.");
             }
-            // description có thể NULL theo DB, nên không kiểm tra
             if (entity.date_incurred == default(DateTime))
             {
+                _logger.LogWarning("Validation failed: Date incurred must be provided"); 
                 throw new ArgumentException("Date incurred must be provided.");
             }
         }
