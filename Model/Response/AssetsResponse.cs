@@ -7,7 +7,7 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Response
     {
         public int asset_id { get; set; }
         public int category_id { get; set; }
-        public GeoJsonGeometry geometry { get; set; } = new GeoJsonGeometry();
+        public GeoJsonGeometry? geometry { get; set; } = new GeoJsonGeometry();
         public string asset_name { get; set; }
         public string asset_code { get; set; }
         public string address { get; set; }

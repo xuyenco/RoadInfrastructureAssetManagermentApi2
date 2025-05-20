@@ -5,6 +5,7 @@ using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Geometry;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
+using System.Text;
 
 namespace Road_Infrastructure_Asset_Management_2.Service
 {
@@ -25,7 +26,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT incident_id, address, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, created_at FROM incidents";
+                var sql = "SELECT incident_id, address, incident_type, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, created_at FROM incidents";
 
                 try
                 {
@@ -38,6 +39,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                             {
                                 incident_id = reader.GetInt32(reader.GetOrdinal("incident_id")),
                                 address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                incident_type = reader.IsDBNull(reader.GetOrdinal("incident_type")) ? null : reader.GetString(reader.GetOrdinal("incident_type")),
                                 geometry = ParseGeoJson(reader.GetString(reader.GetOrdinal("geometry")), "geometry"),
                                 route = reader.IsDBNull(reader.GetOrdinal("route")) ? null : reader.GetString(reader.GetOrdinal("route")),
                                 severity_level = reader.IsDBNull(reader.GetOrdinal("severity_level")) ? null : reader.GetString(reader.GetOrdinal("severity_level")),
@@ -69,7 +71,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT incident_id, address, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, created_at FROM incidents WHERE incident_id = @id";
+                var sql = "SELECT incident_id, address, incident_type, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, created_at FROM incidents WHERE incident_id = @id";
 
                 try
                 {
@@ -84,6 +86,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 {
                                     incident_id = reader.GetInt32(reader.GetOrdinal("incident_id")),
                                     address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                    incident_type = reader.IsDBNull(reader.GetOrdinal("incident_type")) ? null : reader.GetString(reader.GetOrdinal("incident_type")),
                                     geometry = ParseGeoJson(reader.GetString(reader.GetOrdinal("geometry")), "geometry"),
                                     route = reader.IsDBNull(reader.GetOrdinal("route")) ? null : reader.GetString(reader.GetOrdinal("route")),
                                     severity_level = reader.IsDBNull(reader.GetOrdinal("severity_level")) ? null : reader.GetString(reader.GetOrdinal("severity_level")),
@@ -112,6 +115,110 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
         }
 
+        public async Task<(IEnumerable<IncidentsResponse> Incidents, int TotalCount)> GetIncidentsPagination(int page, int pageSize, string searchTerm, int searchField)
+        {
+            var incidents = new List<IncidentsResponse>();
+            int totalCount = 0;
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Xây dựng câu lệnh truy vấn
+                var sqlBuilder = new StringBuilder(@"SELECT incident_id, address, incident_type, ST_AsGeoJSON(geometry) as geometry, route, 
+                                            severity_level, damage_level, processing_status, task_id, created_at 
+                                            FROM incidents");
+                var countSql = "SELECT COUNT(*) FROM incidents";
+                var parameters = new List<NpgsqlParameter>();
+
+                // Thêm điều kiện tìm kiếm nếu có
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    searchTerm = $"%{searchTerm.ToLower()}%"; // Chuẩn bị cho ILIKE
+                    string condition = searchField switch
+                    {
+                        0 => "CAST(incident_id AS TEXT) ILIKE @searchTerm", // ID sự cố
+                        1 => "LOWER(address) ILIKE @searchTerm",            // Địa chỉ
+                        2 => "LOWER(route) ILIKE @searchTerm",              // Tuyến đường
+                        3 => "LOWER(severity_level) ILIKE @searchTerm",     // Mức độ nghiêm trọng
+                        4 => "LOWER(damage_level) ILIKE @searchTerm",       // Mức độ hư hỏng
+                        5 => "LOWER(processing_status) ILIKE @searchTerm",  // Trạng thái xử lý
+                        6 => "TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI') ILIKE @searchTerm", // Ngày tạo
+                        7 => "LOWER(incident_type) ILIKE @incident_type",
+                        _ => null
+                    };
+
+                    if (condition != null)
+                    {
+                        sqlBuilder.Append(" WHERE ");
+                        sqlBuilder.Append(condition);
+                        countSql += $" WHERE {condition}";
+                        parameters.Add(new NpgsqlParameter("@searchTerm", searchTerm));
+                    }
+                }
+
+                // Thêm phân trang
+                sqlBuilder.Append(" ORDER BY incident_id");
+                sqlBuilder.Append(" OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY");
+                parameters.Add(new NpgsqlParameter("@offset", (page - 1) * pageSize));
+                parameters.Add(new NpgsqlParameter("@pageSize", pageSize));
+
+                try
+                {
+                    // Đếm tổng số bản ghi
+                    using (var countCmd = new NpgsqlCommand(countSql, connection))
+                    {
+                        foreach (var param in parameters)
+                        {
+                            countCmd.Parameters.Add(new NpgsqlParameter(param.ParameterName, param.Value));
+                        }
+                        totalCount = Convert.ToInt32(await countCmd.ExecuteScalarAsync());
+                    }
+
+                    // Lấy danh sách sự cố
+                    using (var cmd = new NpgsqlCommand(sqlBuilder.ToString(), connection))
+                    {
+                        foreach (var param in parameters)
+                        {
+                            cmd.Parameters.Add(new NpgsqlParameter(param.ParameterName, param.Value));
+                        }
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var incident = new IncidentsResponse
+                                {
+                                    incident_id = reader.GetInt32(reader.GetOrdinal("incident_id")),
+                                    address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                    incident_type = reader.IsDBNull(reader.GetOrdinal("incident_type")) ? null : reader.GetString(reader.GetOrdinal("incident_type")),
+                                    geometry = ParseGeoJson(reader.GetString(reader.GetOrdinal("geometry")), "geometry"),
+                                    route = reader.IsDBNull(reader.GetOrdinal("route")) ? null : reader.GetString(reader.GetOrdinal("route")),
+                                    severity_level = reader.IsDBNull(reader.GetOrdinal("severity_level")) ? null : reader.GetString(reader.GetOrdinal("severity_level")),
+                                    damage_level = reader.IsDBNull(reader.GetOrdinal("damage_level")) ? null : reader.GetString(reader.GetOrdinal("damage_level")),
+                                    processing_status = reader.IsDBNull(reader.GetOrdinal("processing_status")) ? null : reader.GetString(reader.GetOrdinal("processing_status")),
+                                    task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
+                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                };
+                                incidents.Add(incident);
+                            }
+                        }
+                    }
+
+                    _logger.LogInformation("Retrieved {Count} incidents for page {Page} with total count {TotalCount}", incidents.Count, page, totalCount);
+                    return (incidents, totalCount);
+                }
+                catch (NpgsqlException ex)
+                {
+                    _logger.LogError(ex, "Failed to retrieve incidents with pagination and search");
+                    throw new InvalidOperationException("Failed to retrieve incidents from database.", ex);
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
+            }
+        }
+
         public async Task<IncidentsResponse> CreateIncident(IncidentsRequest entity)
         {
             ValidateRequest(entity);
@@ -121,8 +228,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO incidents 
-                (address, geometry, route, severity_level, damage_level, processing_status, task_id)
-                VALUES (@address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @route, @severity_level, @damage_level, @processing_status, @task_id)
+                (address, incident_type, geometry, route, severity_level, damage_level, processing_status, task_id)
+                VALUES (@address, @incident_type, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @route, @severity_level, @damage_level, @processing_status, @task_id)
                 RETURNING incident_id";
 
                 try
@@ -130,6 +237,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
                         cmd.Parameters.AddWithValue("@address", (object)entity.address ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@incident_type", (object)entity.incident_type ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@geometry", JsonConvert.SerializeObject(entity.geometry));
                         cmd.Parameters.AddWithValue("@route", (object)entity.route ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@severity_level", entity.severity_level);
@@ -168,6 +276,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 var sql = @"
                 UPDATE incidents SET
                     address = @address,
+                    incident_type = @incident_type,
                     geometry = ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405),
                     route = @route,
                     severity_level = @severity_level,
@@ -182,6 +291,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.Parameters.AddWithValue("@address", (object)entity.address ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@incident_type", (object)entity.incident_type ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@geometry", JsonConvert.SerializeObject(entity.geometry));
                         cmd.Parameters.AddWithValue("@route", (object)entity.route ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@severity_level", entity.severity_level);

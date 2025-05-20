@@ -4,13 +4,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
-using Road_Infrastructure_Asset_Management.Model.ImageUpload;
+using Road_Infrastructure_Asset_Management_2.Model.ImageUpload;
 
 namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
     public class IncidentImagesController : ControllerBase
     {
         private readonly IIncidentImageService _Service;

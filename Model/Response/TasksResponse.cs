@@ -15,7 +15,8 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Response
         public int? execution_unit_id { get; set; }
         public int? supervisor_id { get; set; }
         public string method_summary { get; set; }
-        public string main_result { get; set; } 
+        public string main_result { get; set; }
+        public string description { get; set; }
         public DateTime? created_at { get; set; }
     }
 }

@@ -4,11 +4,13 @@ using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
 using Road_Infrastructure_Asset_Management_2.Jwt;
+using System.Text;
 
 namespace Road_Infrastructure_Asset_Management_2.Service
 {
     public class UsersService : IUsersService
     {
+
         private readonly string _connectionString;
         private static readonly string[] ValidRoles = { "admin", "manager", "technician", "inspector", "supervisor" };
         private readonly ILogger<UsersService> _logger; 
@@ -63,6 +65,110 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 finally
                 {
                     await _connection.CloseAsync();
+                }
+            }
+        }
+
+        public async Task<(IEnumerable<UsersResponse> Users, int TotalCount)> GetUsersPagination(int page, int pageSize, string searchTerm, int searchField)
+        {
+            var users = new List<UsersResponse>();
+            int totalCount = 0;
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Xây dựng câu truy vấn SQL
+                var sqlBuilder = new StringBuilder("SELECT * FROM users");
+                var countSql = "SELECT COUNT(*) FROM users";
+                var parameters = new List<NpgsqlParameter>();
+
+                // Thêm điều kiện tìm kiếm nếu có
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    searchTerm = $"%{searchTerm.ToLower()}%"; // Chuẩn bị cho LIKE
+                    string condition = searchField switch
+                    {
+                        0 => "CAST(user_id AS TEXT) ILIKE @searchTerm", // Mã người dùng
+                        1 => "LOWER(username) ILIKE @searchTerm",       // Tên đăng nhập
+                        2 => "LOWER(full_name) ILIKE @searchTerm",     // Họ và tên
+                        3 => "LOWER(email) ILIKE @searchTerm",         // Email
+                        4 => "LOWER(role) ILIKE @searchTerm",          // Vai trò
+                        5 => "TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI') ILIKE @searchTerm", // Ngày tạo
+                        _ => null
+                    };
+
+                    if (condition != null)
+                    {
+                        sqlBuilder.Append(" WHERE ");
+                        sqlBuilder.Append(condition);
+                        countSql += $" WHERE {condition}";
+                        parameters.Add(new NpgsqlParameter("@searchTerm", searchTerm));
+                    }
+                }
+
+                // Thêm phân trang
+                sqlBuilder.Append(" ORDER BY user_id");
+                sqlBuilder.Append(" OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY");
+                parameters.Add(new NpgsqlParameter("@offset", (page - 1) * pageSize));
+                parameters.Add(new NpgsqlParameter("@pageSize", pageSize));
+
+                try
+                {
+                    // Đếm tổng số bản ghi
+                    using (var countCmd = new NpgsqlCommand(countSql, connection))
+                    {
+                        // Tạo bản sao tham số cho countCmd
+                        foreach (var param in parameters)
+                        {
+                            countCmd.Parameters.Add(new NpgsqlParameter(param.ParameterName, param.Value));
+                        }
+                        totalCount = Convert.ToInt32(await countCmd.ExecuteScalarAsync());
+                    }
+
+                    // Lấy danh sách người dùng
+                    using (var cmd = new NpgsqlCommand(sqlBuilder.ToString(), connection))
+                    {
+                        // Tạo bản sao tham số cho cmd
+                        foreach (var param in parameters)
+                        {
+                            cmd.Parameters.Add(new NpgsqlParameter(param.ParameterName, param.Value));
+                        }
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var user = new UsersResponse
+                                {
+                                    user_id = reader.GetInt32(reader.GetOrdinal("user_id")),
+                                    username = reader.GetString(reader.GetOrdinal("username")),
+                                    full_name = reader.IsDBNull(reader.GetOrdinal("full_name")) ? null : reader.GetString(reader.GetOrdinal("full_name")),
+                                    email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString(reader.GetOrdinal("email")),
+                                    role = reader.GetString(reader.GetOrdinal("role")),
+                                    department_company_unit = reader.IsDBNull(reader.GetOrdinal("department_company_unit")) ? null : reader.GetString(reader.GetOrdinal("department_company_unit")),
+                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
+                                    image_name = reader.IsDBNull(reader.GetOrdinal("image_name")) ? null : reader.GetString(reader.GetOrdinal("image_name")),
+                                    image_public_id = reader.IsDBNull(reader.GetOrdinal("image_public_id")) ? null : reader.GetString(reader.GetOrdinal("image_public_id")),
+                                    created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
+                                    refresh_token = reader.IsDBNull(reader.GetOrdinal("refresh_token")) ? null : reader.GetString(reader.GetOrdinal("refresh_token")),
+                                    refresh_token_expiry = reader.IsDBNull(reader.GetOrdinal("refresh_token_expiry")) ? null : reader.GetDateTime(reader.GetOrdinal("refresh_token_expiry"))
+                                };
+                                users.Add(user);
+                            }
+                        }
+                    }
+
+                    _logger.LogInformation("Retrieved {Count} users for page {Page} with total count {TotalCount}", users.Count, page, totalCount);
+                    return (users, totalCount);
+                }
+                catch (NpgsqlException ex)
+                {
+                    _logger.LogError(ex, "Failed to retrieve users with pagination and search");
+                    throw new InvalidOperationException("Failed to retrieve users from database.", ex);
+                }
+                finally
+                {
+                    await connection.CloseAsync();
                 }
             }
         }

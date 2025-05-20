@@ -7,6 +7,7 @@ namespace Road_Infrastructure_Asset_Management_2.Interface
     {
         Task<IEnumerable<UsersResponse>> GetAllUsers();
         Task<UsersResponse?> GetUserById(int id);
+        Task<(IEnumerable<UsersResponse> Users, int TotalCount)> GetUsersPagination(int page, int pageSize, string searchTerm, int searchField);
         Task<UsersResponse?> CreateUser(UsersRequest entity);
         Task<UsersResponse?> UpdateUser(int id, UsersRequest entity);
         Task<bool> DeleteUser(int id);

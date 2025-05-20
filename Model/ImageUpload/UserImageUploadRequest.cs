@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Road_Infrastructure_Asset_Management.Model.ImageUpload
+namespace Road_Infrastructure_Asset_Management_2.Model.ImageUpload
 {
     public class UserImageUploadRequest
     {

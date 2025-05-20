@@ -4,11 +4,10 @@ namespace Road_Infrastructure_Asset_Management_2.Interface
 {
     public interface IReportService
     {
-        Task<IEnumerable<TaskStatusDistribution>> GetTaskStatusDistributions();
-        Task<IEnumerable<IncidentTypeDistribution>> GetIncidentTypeDistributions();
-        Task<IEnumerable<IncidentsOverTime>> GetIncidentsOverTime();
-        Task<IEnumerable<BudgetAndCost>> GetBudgetAndCosts();
-        Task<IEnumerable<AssetDistributionByCategory>> GetAssetDistributionByCategories();
-        Task<IEnumerable<AssetDistributedByCondition>> GetAssetDistributedByCondition();
+        Task<IEnumerable<AssetStatusReport>> GetAssetStatusReport();
+        Task<IEnumerable<IncidentTaskTrendReport>> GetIncidentTaskTrendReport();
+        Task<IEnumerable<IncidentDistributionReport>> GetIncidentDistributionReport();
+        Task<IEnumerable<MaintenanceFrequencyReport>> GetMaintenanceFrequencyReport();
+        Task<IEnumerable<TaskPerformanceReport>> GetTaskPerformanceReport();
     }
 }

@@ -5,13 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Jwt;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
-using Road_Infrastructure_Asset_Management.Model.ImageUpload;
+using Road_Infrastructure_Asset_Management_2.Model.ImageUpload;
 
 namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
     public class UsersController : ControllerBase
     {
         private readonly IUsersService _Service;
@@ -28,6 +27,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet]
+        //[Authorize]
         public async Task<ActionResult> GetAllUsers()
         {
             try
@@ -45,6 +45,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("{id}")]
+        //[Authorize]
         public async Task<ActionResult> GetUsersById(int id)
         {
             try
@@ -65,8 +66,39 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
+        [HttpGet("paged")]
+        //[Authorize]
+        public async Task<ActionResult> GetUsersPagination(int page = 1, int pageSize = 1, string searchTerm = "", int searchField = 0)
+        {
+            try
+            {
+                _logger.LogInformation("Received request to get users with pagination - Page: {Page}, PageSize: {PageSize}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
+                    page, pageSize, searchTerm, searchField);
+
+                var (users, totalCount) = await _Service.GetUsersPagination(page, pageSize, searchTerm, searchField);
+
+                if (users == null || !users.Any())
+                {
+                    _logger.LogWarning("No users found for Page: {Page}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
+                        page, searchTerm, searchField);
+                    return NotFound("No users found.");
+                }
+
+                _logger.LogInformation("Returned {UserCount} users for Page: {Page}, TotalCount: {TotalCount}",
+                    users.Count(), page, totalCount);
+
+                return Ok(new { users, totalCount });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get users with pagination - Page: {Page}, PageSize: {PageSize}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
+                    page, pageSize, searchTerm, searchField);
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
 
         [HttpPost]
+        //[Authorize(Roles = "admin")]
         public async Task<ActionResult> CreateUsers([FromForm] UserImageUploadRequest request)
         {
             try
@@ -103,6 +135,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                     full_name = request.full_name,
                     email = request.email,
                     role = request.role,
+                    department_company_unit = request.department_company_unit,
                     image_url = imageUrl,
                     image_name = imageName,
                     image_public_id = imagePublicID
@@ -135,6 +168,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
+        //[Authorize(Roles = "admin")]
         public async Task<ActionResult> UpdateUsers([FromForm] UserImageUploadRequest request, int id)
         {
             try
@@ -193,6 +227,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                     full_name = request.full_name,
                     email = request.email,
                     role = request.role,
+                    department_company_unit = request.department_company_unit,
                     image_url = ImageUrl,
                     image_name = ImageName,
                     image_public_id = ImagePublicId,
@@ -225,6 +260,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
+        //[Authorize(Roles = "admin")]
         public async Task<ActionResult> DeleteUsers(int id)
         {
             try
@@ -285,7 +321,8 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                     AccessToken = accessToken,
                     RefreshToken = user.refresh_token,
                     Username = user.username,
-                    Role = user.role
+                    Role = user.role,
+                    Id = user.user_id,
                 });
             }
             catch (ArgumentException ex)
@@ -333,7 +370,8 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                     AccessToken = accessToken,
                     RefreshToken = user.refresh_token,
                     Username = user.username,
-                    Role = user.role
+                    Role = user.role,
+                    Id = user.user_id,
                 });
             }
             catch (ArgumentException ex)

@@ -11,7 +11,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
     {
         private readonly string _connectionString;
         private readonly ILogger<AssetCategoriesService> _logger; 
-        private static readonly string[] ValidGeometryTypes = { "point", "linestring", "polygon" };
+        private static readonly string[] ValidGeometryTypes = { "point", "linestring", "polygon","multilinestring" };
 
         public AssetCategoriesService(string connectionString, ILogger<AssetCategoriesService> logger) 
         {

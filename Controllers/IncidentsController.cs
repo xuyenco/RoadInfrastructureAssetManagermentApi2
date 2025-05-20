@@ -7,7 +7,6 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
     public class IncidentsController : ControllerBase
     {
         private readonly IIncidentsService _Service;
@@ -58,6 +57,36 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             }
         }
 
+        [HttpGet("paged")]
+        public async Task<ActionResult> GetIncidentsPagination(int page = 1, int pageSize = 1, string searchTerm = "", int searchField = 0)
+        {
+            try
+            {
+                _logger.LogInformation("Received request to get incidents with pagination - Page: {Page}, PageSize: {PageSize}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
+                    page, pageSize, searchTerm, searchField);
+
+                var (incidents, totalCount) = await _Service.GetIncidentsPagination(page, pageSize, searchTerm, searchField);
+
+                if (incidents == null || !incidents.Any())
+                {
+                    _logger.LogWarning("No incidents found for Page: {Page}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
+                        page, searchTerm, searchField);
+                    return NotFound("No incidents found.");
+                }
+
+                _logger.LogInformation("Returned {IncidentsCount} users for Page: {Page}, TotalCount: {TotalCount}",
+                    incidents.Count(), page, totalCount);
+
+                return Ok(new { incidents, totalCount });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get incidents with pagination - Page: {Page}, PageSize: {PageSize}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
+                    page, pageSize, searchTerm, searchField);
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult> CreateIncidents([FromBody] IncidentsRequest request)
         {
@@ -92,6 +121,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
+        //[Authorize(Roles = "inspector")]
         public async Task<ActionResult> UpdateIncidents(int id, [FromBody] IncidentsRequest request)
         {
             if (!ModelState.IsValid)
@@ -137,6 +167,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
+        //[Authorize(Roles = "inspector")]
         public async Task<ActionResult> DeleteIncidents(int id)
         {
             try

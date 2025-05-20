@@ -22,6 +22,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet]
+        //[Authorize]
         public async Task<ActionResult> GetAllTasks()
         {
             try
@@ -39,6 +40,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("{id}")]
+        //[Authorize]
         public async Task<ActionResult> GetTaskById(int id)
         {
             try
@@ -60,7 +62,38 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             }
         }
 
+        [HttpGet("paged")]
+        public async Task<ActionResult> GetTasksPagination(int page = 1, int pageSize = 1, string searchTerm = "", int searchField = 0)
+        {
+            try
+            {
+                _logger.LogInformation("Received request to get tasks with pagination - Page: {Page}, PageSize: {PageSize}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
+                    page, pageSize, searchTerm, searchField);
+
+                var (tasks, totalCount) = await _Service.GetTasksPagination(page, pageSize, searchTerm, searchField);
+
+                if (tasks == null || !tasks.Any())
+                {
+                    _logger.LogWarning("No tasks found for Page: {Page}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
+                        page, searchTerm, searchField);
+                    return NotFound("No tasks found.");
+                }
+
+                _logger.LogInformation("Returned {TasksCount} users for Page: {Page}, TotalCount: {TotalCount}",
+                    tasks.Count(), page, totalCount);
+
+                return Ok(new { tasks, totalCount });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get tasks with pagination - Page: {Page}, PageSize: {PageSize}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
+                    page, pageSize, searchTerm, searchField);
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
         [HttpPost]
+        //[Authorize(Roles = "inspector")]
         public async Task<ActionResult> CreateTask([FromBody] TasksRequest request)
         {
             if (!ModelState.IsValid)
@@ -99,6 +132,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
+        //[Authorize(Roles = "inspector,technician")]
         public async Task<ActionResult> UpdateTask(int id, [FromBody] TasksRequest request)
         {
             if (!ModelState.IsValid)
@@ -144,6 +178,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
+        //[Authorize(Roles = "inspector")]
         public async Task<ActionResult> DeleteTask(int id)
         {
             try

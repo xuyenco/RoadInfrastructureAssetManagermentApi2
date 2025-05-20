@@ -348,6 +348,37 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.AssetsController",
+    "Method": "GetAssetsPagination",
+    "RelativePath": "api/Assets/paged",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchTerm",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchField",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.BudgetsController",
     "Method": "GetAllBudgets",
     "RelativePath": "api/Budgets",
@@ -706,6 +737,37 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.IncidentsController",
+    "Method": "GetIncidentsPagination",
+    "RelativePath": "api/Incidents/paged",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchTerm",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchField",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.MaintenanceDocumentController",
     "Method": "GetAllMaintenanceDocuments",
     "RelativePath": "api/MaintenanceDocument",
@@ -922,29 +984,140 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.MaintenanceHistoriesController",
+    "Method": "GetPagedMaintenanceHistoryByAssetId",
+    "RelativePath": "api/MaintenanceHistories/AssetId/{id}/Paged",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "currentPage",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchTerm",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchField",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.NotificationsController",
+    "Method": "GetAllNotifications",
+    "RelativePath": "api/Notifications",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.NotificationsController",
+    "Method": "CreateNotifications",
+    "RelativePath": "api/Notifications",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Road_Infrastructure_Asset_Management_2.Model.Request.NotificationRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.NotificationsController",
+    "Method": "GetNotificationsById",
+    "RelativePath": "api/Notifications/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.NotificationsController",
+    "Method": "UpdateNotifications",
+    "RelativePath": "api/Notifications/{id}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Road_Infrastructure_Asset_Management_2.Model.Request.NotificationRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.NotificationsController",
+    "Method": "DeleteNotifications",
+    "RelativePath": "api/Notifications/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.NotificationsController",
+    "Method": "GetNotificationById",
+    "RelativePath": "api/Notifications/userid/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.ReportController",
     "Method": "GetAssetDistributedByCondition",
     "RelativePath": "api/Report/AssetDistributedByCondition",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.ReportController",
-    "Method": "GetAssetDistributionByCategories",
-    "RelativePath": "api/Report/AssetDistributionByCategories",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.ReportController",
-    "Method": "GetBudgetAndCosts",
-    "RelativePath": "api/Report/BudgetAndCosts",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -965,6 +1138,16 @@
     "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.ReportController",
     "Method": "GetIncidentTypeDistribution",
     "RelativePath": "api/Report/IncidentTypeDistribution",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.ReportController",
+    "Method": "GetMaintenanceFrequency",
+    "RelativePath": "api/Report/MaintenanceFrequency",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -1056,6 +1239,37 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.TasksController",
+    "Method": "GetTasksPagination",
+    "RelativePath": "api/Tasks/paged",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchTerm",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchField",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -1211,6 +1425,37 @@
         "Name": "userInput",
         "Type": "Road_Infrastructure_Asset_Management_2.Model.Request.LoginRequest",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.UsersController",
+    "Method": "GetUsersPagination",
+    "RelativePath": "api/Users/paged",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchTerm",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchField",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

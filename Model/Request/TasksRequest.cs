@@ -19,5 +19,6 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Request
         public int? supervisor_id { get; set; }
         public string method_summary { get; set; }
         public string? main_result { get; set; }
+        public string? description {  get; set; }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging; 
+using Microsoft.Extensions.Logging;
 using Road_Infrastructure_Asset_Management_2.Interface;
 
 namespace Road_Infrastructure_Asset_Management_2.Controllers
@@ -10,30 +10,30 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
     //[Authorize]
     public class ReportController : ControllerBase
     {
-        private readonly IReportService _Service;
-        private readonly IConfiguration _Configuration;
-        private readonly ILogger<ReportController> _logger; 
+        private readonly IReportService _service;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<ReportController> _logger;
 
-        public ReportController(IReportService Service, IConfiguration configuration, ILogger<ReportController> logger) 
+        public ReportController(IReportService service, IConfiguration configuration, ILogger<ReportController> logger)
         {
-            _Service = Service;
-            _Configuration = configuration;
+            _service = service;
+            _configuration = configuration;
             _logger = logger;
         }
 
-        [HttpGet("TaskStatusDistribution")]
-        public async Task<ActionResult> GetTaskStatusDistribution()
+        [HttpGet("AssetDistributedByCondition")]
+        public async Task<ActionResult> GetAssetDistributedByCondition()
         {
             try
             {
-                _logger.LogInformation("Received request to get task status distribution"); 
-                var result = await _Service.GetTaskStatusDistributions();
-                _logger.LogInformation("Returned {Count} task status distributions", result.Count()); 
+                _logger.LogInformation("Received request to get asset status report");
+                var result = await _service.GetAssetStatusReport();
+                _logger.LogInformation("Returned {Count} asset status reports", result.Count());
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get task status distribution");
+                _logger.LogError(ex, "Failed to get asset status report");
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
@@ -43,14 +43,31 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         {
             try
             {
-                _logger.LogInformation("Received request to get incident type distribution"); 
-                var result = await _Service.GetIncidentTypeDistributions();
-                _logger.LogInformation("Returned {Count} incident type distributions", result.Count()); 
+                _logger.LogInformation("Received request to get incident distribution report");
+                var result = await _service.GetIncidentDistributionReport();
+                _logger.LogInformation("Returned {Count} incident distribution reports", result.Count());
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get incident type distribution"); 
+                _logger.LogError(ex, "Failed to get incident distribution report");
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [HttpGet("TaskStatusDistribution")]
+        public async Task<ActionResult> GetTaskStatusDistribution()
+        {
+            try
+            {
+                _logger.LogInformation("Received request to get task performance report");
+                var result = await _service.GetTaskPerformanceReport();
+                _logger.LogInformation("Returned {Count} task performance reports", result.Count());
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get task performance report");
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
@@ -60,65 +77,31 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         {
             try
             {
-                _logger.LogInformation("Received request to get incidents over time");
-                var result = await _Service.GetIncidentsOverTime();
-                _logger.LogInformation("Returned {Count} incidents over time", result.Count()); 
+                _logger.LogInformation("Received request to get incident and task trend report");
+                var result = await _service.GetIncidentTaskTrendReport();
+                _logger.LogInformation("Returned {Count} incident and task trend reports", result.Count());
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get incidents over time"); 
+                _logger.LogError(ex, "Failed to get incident and task trend report");
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }
 
-        [HttpGet("BudgetAndCosts")]
-        public async Task<ActionResult> GetBudgetAndCosts()
+        [HttpGet("MaintenanceFrequency")]
+        public async Task<ActionResult> GetMaintenanceFrequency()
         {
             try
             {
-                _logger.LogInformation("Received request to get budget and costs"); 
-                var result = await _Service.GetBudgetAndCosts();
-                _logger.LogInformation("Returned {Count} budget and cost records", result.Count()); 
+                _logger.LogInformation("Received request to get maintenance frequency report");
+                var result = await _service.GetMaintenanceFrequencyReport();
+                _logger.LogInformation("Returned {Count} maintenance frequency reports", result.Count());
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get budget and costs"); 
-                return StatusCode(500, "An unexpected error occurred.");
-            }
-        }
-
-        [HttpGet("AssetDistributionByCategories")]
-        public async Task<ActionResult> GetAssetDistributionByCategories()
-        {
-            try
-            {
-                _logger.LogInformation("Received request to get asset distribution by categories"); 
-                var result = await _Service.GetAssetDistributionByCategories();
-                _logger.LogInformation("Returned {Count} asset distributions by category", result.Count()); 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get asset distribution by categories");
-                return StatusCode(500, "An unexpected error occurred.");
-            }
-        }
-
-        [HttpGet("AssetDistributedByCondition")]
-        public async Task<ActionResult> GetAssetDistributedByCondition()
-        {
-            try
-            {
-                _logger.LogInformation("Received request to get asset distribution by condition"); 
-                var result = await _Service.GetAssetDistributedByCondition();
-                _logger.LogInformation("Returned {Count} asset distributions by condition", result.Count()); 
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get asset distribution by condition"); 
+                _logger.LogError(ex, "Failed to get maintenance frequency report");
                 return StatusCode(500, "An unexpected error occurred.");
             }
         }

@@ -1,273 +1,333 @@
-﻿using Microsoft.Extensions.Logging; 
-using Npgsql;
+﻿using Npgsql;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Report;
+using Road_Infrastructure_Asset_Management_2.Model.Response;
 
 namespace Road_Infrastructure_Asset_Management_2.Service
 {
     public class ReportService : IReportService
     {
         private readonly string _connectionString;
-        private readonly ILogger<ReportService> _logger; 
+        private readonly ILogger<ReportService> _logger;
 
-        public ReportService(string connectionString, ILogger<ReportService> logger) 
+        public ReportService(string connectionString, ILogger<ReportService> logger)
         {
             _connectionString = connectionString;
             _logger = logger;
         }
 
-        public async Task<IEnumerable<TaskStatusDistribution>> GetTaskStatusDistributions()
+        public async Task<IEnumerable<AssetStatusReport>> GetAssetStatusReport()
         {
-            var TaskStatusDistributions = new List<TaskStatusDistribution>();
-            using (var _connection = new NpgsqlConnection(_connectionString))
+            var reports = new List<AssetStatusReport>();
+
+            using (var connection = new NpgsqlConnection(_connectionString))
             {
-                await _connection.OpenAsync();
-                var sql = "SELECT status, (count (task_id)) AS count FROM tasks GROUP BY status";
+                await connection.OpenAsync();
+                var sql = @"
+                SELECT 
+                    ac.category_name,
+                    COUNT(CASE WHEN a.asset_status = 'in_use' THEN 1 END) AS in_use_count,
+                    COUNT(CASE WHEN a.asset_status = 'damaged_not_in_use' THEN 1 END) AS damaged_count
+                FROM 
+                    assets a
+                JOIN 
+                    asset_categories ac ON a.category_id = ac.category_id
+                GROUP BY 
+                    ac.category_name
+                ORDER BY 
+                    ac.category_name";
+
                 try
                 {
-                    using (var cmd = new NpgsqlCommand(sql, _connection))
+                    using (var cmd = new NpgsqlCommand(sql, connection))
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        while (await reader.ReadAsync())
                         {
-                            while (await reader.ReadAsync())
+                            var report = new AssetStatusReport
                             {
-                                var TaskStatusDistribution = new TaskStatusDistribution
-                                {
-                                    count = reader.GetInt32(reader.GetOrdinal("count")),
-                                    status = reader.GetString(reader.GetOrdinal("status")),
-                                };
-                                TaskStatusDistributions.Add(TaskStatusDistribution);
-                            }
+                                category_name = reader.GetString(reader.GetOrdinal("category_name")),
+                                in_use_count = reader.GetInt32(reader.GetOrdinal("in_use_count")),
+                                damaged_count = reader.GetInt32(reader.GetOrdinal("damaged_count"))
+                            };
+                            reports.Add(report);
                         }
                     }
-                    _logger.LogInformation("Retrieved {Count} task status distributions successfully", TaskStatusDistributions.Count);
-                    return TaskStatusDistributions;
+                    _logger.LogInformation("Retrieved {Count} asset status reports successfully", reports.Count);
+                    return reports;
                 }
                 catch (NpgsqlException ex)
                 {
-                    _logger.LogError(ex, "Failed to retrieve Task Status Distributions Report from database"); 
-                    throw new InvalidOperationException("Failed to retrieve Task Status Distributions Report from database.", ex);
+                    _logger.LogError(ex, "Failed to retrieve asset status reports from database");
+                    throw new InvalidOperationException("Failed to retrieve asset status reports from database.", ex);
                 }
                 finally
                 {
-                    await _connection.CloseAsync();
+                    await connection.CloseAsync();
                 }
             }
         }
 
-        public async Task<IEnumerable<IncidentTypeDistribution>> GetIncidentTypeDistributions()
+        public async Task<IEnumerable<IncidentDistributionReport>> GetIncidentDistributionReport()
         {
-            var IncidentTypeDistributions = new List<IncidentTypeDistribution>();
-            using (var _connection = new NpgsqlConnection(_connectionString))
+            var reports = new List<IncidentDistributionReport>();
+
+            using (var connection = new NpgsqlConnection(_connectionString))
             {
-                await _connection.OpenAsync();
-                var sql = "SELECT incident_type, COUNT( incident_id) AS count FROM incidents GROUP BY incident_type";
+                await connection.OpenAsync();
+                var sql = @"
+                WITH route_counts AS (
+                    SELECT 
+                        route,
+                        COUNT(*) AS incident_count
+                    FROM 
+                        incidents
+                    WHERE 
+                        route IS NOT NULL
+                    GROUP BY 
+                        route
+                ),
+                ranked_routes AS (
+                    SELECT 
+                        route,
+                        incident_count,
+                        ROW_NUMBER() OVER (ORDER BY incident_count DESC) AS rank
+                    FROM 
+                        route_counts
+                ),
+                top_routes AS (
+                    SELECT 
+                        route,
+                        incident_count
+                    FROM 
+                        ranked_routes
+                    WHERE 
+                        rank <= 10
+                ),
+                other_routes AS (
+                    SELECT 
+                        'Other' AS route,
+                        COALESCE(SUM(incident_count), 0) AS incident_count
+                    FROM 
+                        ranked_routes
+                    WHERE 
+                        rank > 10
+                )
+                SELECT 
+                    route,
+                    incident_count
+                FROM 
+                    top_routes
+                UNION ALL
+                SELECT 
+                    route,
+                    incident_count
+                FROM 
+                    other_routes
+                WHERE 
+                    incident_count > 0
+                ORDER BY 
+                    incident_count DESC, route";
+
                 try
                 {
-                    using (var cmd = new NpgsqlCommand(sql, _connection))
+                    using (var cmd = new NpgsqlCommand(sql, connection))
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        while (await reader.ReadAsync())
                         {
-                            while (await reader.ReadAsync())
+                            var report = new IncidentDistributionReport
                             {
-                                var IncidentTypeDistribution = new IncidentTypeDistribution
-                                {
-                                    count = reader.GetInt32(reader.GetOrdinal("count")),
-                                    incident_type = reader.GetString(reader.GetOrdinal("incident_type")),
-                                };
-                                IncidentTypeDistributions.Add(IncidentTypeDistribution);
-                            }
+                                route = reader.GetString(reader.GetOrdinal("route")),
+                                incident_count = reader.GetInt32(reader.GetOrdinal("incident_count"))
+                            };
+                            reports.Add(report);
                         }
                     }
-                    _logger.LogInformation("Retrieved {Count} incident type distributions successfully", IncidentTypeDistributions.Count); 
-                    return IncidentTypeDistributions;
+                    _logger.LogInformation("Retrieved {Count} incident distribution reports successfully", reports.Count);
+                    return reports;
                 }
                 catch (NpgsqlException ex)
                 {
-                    _logger.LogError(ex, "Failed to retrieve Incident Type Distributions Report from database"); 
-                    throw new InvalidOperationException("Failed to retrieve Incident Type Distributions Report from database.", ex);
+                    _logger.LogError(ex, "Failed to retrieve incident distribution reports from database");
+                    throw new InvalidOperationException("Failed to retrieve incident distribution reports from database.", ex);
                 }
                 finally
                 {
-                    await _connection.CloseAsync();
+                    await connection.CloseAsync();
                 }
             }
         }
 
-        public async Task<IEnumerable<IncidentsOverTime>> GetIncidentsOverTime()
+        public async Task<IEnumerable<TaskPerformanceReport>> GetTaskPerformanceReport()
         {
-            var IncidentsOvertimes = new List<IncidentsOverTime>();
-            using (var _connection = new NpgsqlConnection(_connectionString))
+            var reports = new List<TaskPerformanceReport>();
+
+            using (var connection = new NpgsqlConnection(_connectionString))
             {
-                await _connection.OpenAsync();
-                var sql = "SELECT EXTRACT(YEAR FROM reported_at) AS year, EXTRACT(MONTH FROM reported_at) AS month, count ( incident_id) as count FROM incidents GROUP BY year,month ORDER BY year,month";
+                await connection.OpenAsync();
+                var sql = @"
+                SELECT 
+                    u.department_company_unit,
+                    COUNT(t.task_id) AS task_count,
+                    AVG((t.end_date - t.start_date) / 3600.0) AS avg_hours_to_complete
+                FROM 
+                    tasks t
+                JOIN 
+                    users u ON t.execution_unit_id = u.user_id
+                WHERE 
+                    t.start_date IS NOT NULL
+                    AND t.end_date IS NOT NULL
+                    AND t.end_date >= t.start_date
+                GROUP BY 
+                    u.department_company_unit
+                ORDER BY 
+                    task_count DESC";
+
                 try
                 {
-                    using (var cmd = new NpgsqlCommand(sql, _connection))
+                    using (var cmd = new NpgsqlCommand(sql, connection))
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        while (await reader.ReadAsync())
                         {
-                            while (await reader.ReadAsync())
+                            var report = new TaskPerformanceReport
                             {
-                                var IncidentsOverTime = new IncidentsOverTime
-                                {
-                                    year = reader.GetInt32(reader.GetOrdinal("year")),
-                                    month = reader.GetInt32(reader.GetOrdinal("month")),
-                                    count = reader.GetInt32(reader.GetOrdinal("count")),
-                                };
-                                IncidentsOvertimes.Add(IncidentsOverTime);
-                            }
+                                department_company_unit = reader.GetString(reader.GetOrdinal("department_company_unit")),
+                                task_count = reader.GetInt32(reader.GetOrdinal("task_count")),
+                                avg_hours_to_complete = reader.IsDBNull(reader.GetOrdinal("avg_hours_to_complete"))
+                                    ? 0.0
+                                    : reader.GetDouble(reader.GetOrdinal("avg_hours_to_complete"))
+                            };
+                            reports.Add(report);
                         }
                     }
-                    _logger.LogInformation("Retrieved {Count} incidents over time successfully", IncidentsOvertimes.Count); 
-                    return IncidentsOvertimes;
+                    _logger.LogInformation("Retrieved {Count} task performance reports successfully", reports.Count);
+                    return reports;
                 }
                 catch (NpgsqlException ex)
                 {
-                    _logger.LogError(ex, "Failed to retrieve Incident Over Time Report from database"); 
-                    throw new InvalidOperationException("Failed to retrieve Incident Over Time Report from database.", ex);
+                    _logger.LogError(ex, "Failed to retrieve task performance reports from database");
+                    throw new InvalidOperationException("Failed to retrieve task performance reports from database.", ex);
                 }
                 finally
                 {
-                    await _connection.CloseAsync();
+                    await connection.CloseAsync();
                 }
             }
         }
 
-        public async Task<IEnumerable<BudgetAndCost>> GetBudgetAndCosts()
+        public async Task<IEnumerable<IncidentTaskTrendReport>> GetIncidentTaskTrendReport()
         {
-            var BudgetAndCosts = new List<BudgetAndCost>();
-            using (var _connection = new NpgsqlConnection(_connectionString))
+            var reports = new List<IncidentTaskTrendReport>();
+
+            using (var connection = new NpgsqlConnection(_connectionString))
             {
-                await _connection.OpenAsync();
-                var sql = @"WITH CostsByYear AS (
-                                SELECT EXTRACT(YEAR FROM date_incurred) AS year, SUM(amount) AS total_cost
-                                FROM costs
-                                GROUP BY EXTRACT(YEAR FROM date_incurred)
-                            ),
-                            BudgetsByYear AS (
-                                SELECT fiscal_year AS year, SUM(total_amount) AS total_budget
-                                FROM budgets
-                                GROUP BY fiscal_year
-                            )
-                            SELECT 
-                                COALESCE(c.year, b.year) AS fiscal_year,
-                                COALESCE(c.total_cost, 0) AS total_cost,
-                                COALESCE(b.total_budget, 0) AS total_budget
-                            FROM CostsByYear c
-                            FULL OUTER JOIN BudgetsByYear b ON c.year = b.year
-                            ORDER BY fiscal_year;";
+                await connection.OpenAsync();
+                var sql = @"
+                SELECT 
+                    DATE_TRUNC('month', COALESCE(i.created_at, t.created_at)) AS month,
+                    COUNT(i.incident_id) AS incident_count,
+                    COUNT(t.task_id) AS task_count,
+                    COALESCE(t.status, 'N/A') AS task_status,
+                    COUNT(t.task_id) FILTER (WHERE t.status = 'completed') AS completed_task_count
+                FROM 
+                    incidents i
+                FULL OUTER JOIN 
+                    tasks t ON DATE_TRUNC('month', i.created_at) = DATE_TRUNC('month', t.created_at)
+                GROUP BY 
+                    DATE_TRUNC('month', COALESCE(i.created_at, t.created_at)), t.status
+                ORDER BY 
+                    month";
+
                 try
                 {
-                    using (var cmd = new NpgsqlCommand(sql, _connection))
+                    using (var cmd = new NpgsqlCommand(sql, connection))
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        while (await reader.ReadAsync())
                         {
-                            while (await reader.ReadAsync())
+                            var report = new IncidentTaskTrendReport
                             {
-                                var BudgetAndCost = new BudgetAndCost
-                                {
-                                    fiscal_year = reader.GetInt32(reader.GetOrdinal("fiscal_year")),
-                                    total_budget = reader.GetInt32(reader.GetOrdinal("total_budget")),
-                                    total_cost = reader.GetInt32(reader.GetOrdinal("total_cost")),
-                                };
-                                BudgetAndCosts.Add(BudgetAndCost);
-                            }
+                                month = reader.GetDateTime(reader.GetOrdinal("month")),
+                                incident_count = reader.GetInt32(reader.GetOrdinal("incident_count")),
+                                task_count = reader.GetInt32(reader.GetOrdinal("task_count")),
+                                task_status = reader.GetString(reader.GetOrdinal("task_status")),
+                                completed_task_count = reader.GetInt32(reader.GetOrdinal("completed_task_count"))
+                            };
+                            reports.Add(report);
                         }
                     }
-                    _logger.LogInformation("Retrieved {Count} budget and cost records successfully", BudgetAndCosts.Count);
-                    return BudgetAndCosts;
+                    _logger.LogInformation("Retrieved {Count} incident and task trend reports successfully", reports.Count);
+                    return reports;
                 }
                 catch (NpgsqlException ex)
                 {
-                    _logger.LogError(ex, "Failed to retrieve Budget and Cost Report from database"); 
-                    throw new InvalidOperationException("Failed to retrieve Budget and Cost Report from database.", ex);
+                    _logger.LogError(ex, "Failed to retrieve incident and task trend reports from database");
+                    throw new InvalidOperationException("Failed to retrieve incident and task trend reports from database.", ex);
                 }
                 finally
                 {
-                    await _connection.CloseAsync();
+                    await connection.CloseAsync();
                 }
             }
         }
-
-        public async Task<IEnumerable<AssetDistributionByCategory>> GetAssetDistributionByCategories()
+        public async Task<IEnumerable<MaintenanceFrequencyReport>> GetMaintenanceFrequencyReport()
         {
-            var AssetDistributionByCategories = new List<AssetDistributionByCategory>();
-            using (var _connection = new NpgsqlConnection(_connectionString))
+            var reports = new List<MaintenanceFrequencyReport>();
+
+            using (var connection = new NpgsqlConnection(_connectionString))
             {
-                await _connection.OpenAsync();
-                var sql = @"SELECT category_name, COUNT (asset_id) AS count
-                            FROM asset_categories LEFT JOIN assets ON assets.category_id = asset_categories.category_id
-                            GROUP BY asset_categories.category_id";
+                await connection.OpenAsync();
+                var sql = @"
+                SELECT 
+                    a.asset_id,
+                    a.asset_name,
+                    COUNT(m.maintenance_id) AS maintenance_count,
+                    MAX(t.end_date) AS latest_maintenance_date,
+                    COALESCE(t.status, 'N/A') AS latest_maintenance_status
+                FROM 
+                    assets a
+                LEFT JOIN 
+                    maintenance_history m ON a.asset_id = m.asset_id
+                LEFT JOIN 
+                    tasks t ON m.task_id = t.task_id
+                GROUP BY 
+                    a.asset_id, a.asset_name, t.status
+                ORDER BY 
+                    maintenance_count DESC, latest_maintenance_date DESC";
+
                 try
                 {
-                    using (var cmd = new NpgsqlCommand(sql, _connection))
+                    using (var cmd = new NpgsqlCommand(sql, connection))
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        while (await reader.ReadAsync())
                         {
-                            while (await reader.ReadAsync())
+                            var report = new MaintenanceFrequencyReport
                             {
-                                var AssetDistributionByCategory = new AssetDistributionByCategory
-                                {
-                                    category_name = reader.GetString(reader.GetOrdinal("category_name")),
-                                    count = reader.GetInt32(reader.GetOrdinal("count")),
-                                };
-                                AssetDistributionByCategories.Add(AssetDistributionByCategory);
-                            }
+                                asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
+                                asset_name = reader.GetString(reader.GetOrdinal("asset_name")),
+                                maintenance_count = reader.GetInt32(reader.GetOrdinal("maintenance_count")),
+                                latest_maintenance_date = reader.IsDBNull(reader.GetOrdinal("latest_maintenance_date"))
+                                    ? null
+                                    : reader.GetDateTime(reader.GetOrdinal("latest_maintenance_date")),
+                                latest_maintenance_status = reader.GetString(reader.GetOrdinal("latest_maintenance_status"))
+                            };
+                            reports.Add(report);
                         }
                     }
-                    _logger.LogInformation("Retrieved {Count} asset distributions by category successfully", AssetDistributionByCategories.Count); 
-                    return AssetDistributionByCategories;
+                    _logger.LogInformation("Retrieved {Count} maintenance frequency reports successfully", reports.Count);
+                    return reports;
                 }
                 catch (NpgsqlException ex)
                 {
-                    _logger.LogError(ex, "Failed to retrieve Asset Distributed By Category from database"); 
-                    throw new InvalidOperationException("Failed to retrieve Asset Distributed By Category from database.", ex);
+                    _logger.LogError(ex, "Failed to retrieve maintenance frequency reports from database");
+                    throw new InvalidOperationException("Failed to retrieve maintenance frequency reports from database.", ex);
                 }
                 finally
                 {
-                    await _connection.CloseAsync();
-                }
-            }
-        }
-
-        public async Task<IEnumerable<AssetDistributedByCondition>> GetAssetDistributedByCondition()
-        {
-            var AssetDistributedByConditions = new List<AssetDistributedByCondition>();
-            using (var _connection = new NpgsqlConnection(_connectionString))
-            {
-                await _connection.OpenAsync();
-                var sql = @"SELECT condition, COUNT(asset_id) as count
-                            FROM assets
-                            GROUP BY condition";
-                try
-                {
-                    using (var cmd = new NpgsqlCommand(sql, _connection))
-                    {
-                        using (var reader = await cmd.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                var AssetDistributedByCondition = new AssetDistributedByCondition
-                                {
-                                    condition = reader.GetString(reader.GetOrdinal("condition")),
-                                    count = reader.GetInt32(reader.GetOrdinal("count")),
-                                };
-                                AssetDistributedByConditions.Add(AssetDistributedByCondition);
-                            }
-                        }
-                    }
-                    _logger.LogInformation("Retrieved {Count} asset distributions by condition successfully", AssetDistributedByConditions.Count); 
-                    return AssetDistributedByConditions;
-                }
-                catch (NpgsqlException ex)
-                {
-                    _logger.LogError(ex, "Failed to retrieve Asset Distributed By Condition from database"); 
-                    throw new InvalidOperationException("Failed to retrieve Asset Distributed By Condition from database.", ex);
-                }
-                finally
-                {
-                    await _connection.CloseAsync();
+                    await connection.CloseAsync();
                 }
             }
         }

@@ -5,6 +5,7 @@ using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
 using Newtonsoft.Json;
 using Road_Infrastructure_Asset_Management_2.Model.Geometry;
+using System.Text;
 
 namespace Road_Infrastructure_Asset_Management_2.Service
 {
@@ -25,7 +26,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, method_summary, main_result, created_at FROM tasks";
+                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, method_summary, main_result, description, created_at FROM tasks";
 
                 try
                 {
@@ -48,6 +49,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 supervisor_id = reader.IsDBNull(reader.GetOrdinal("supervisor_id")) ? null : reader.GetInt32(reader.GetOrdinal("supervisor_id")),
                                 method_summary = reader.IsDBNull(reader.GetOrdinal("method_summary")) ? null : reader.GetString(reader.GetOrdinal("method_summary")),
                                 main_result = reader.IsDBNull(reader.GetOrdinal("main_result")) ? null : reader.GetString(reader.GetOrdinal("main_result")),
+                                description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
                                 created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             tasks.Add(task);
@@ -73,7 +75,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, method_summary, main_result, created_at FROM tasks WHERE task_id = @id";
+                var sql = "SELECT task_id, task_type, work_volume, status, address, ST_AsGeoJSON(geometry) as geometry, start_date, end_date, execution_unit_id, supervisor_id, method_summary, main_result, description, created_at FROM tasks WHERE task_id = @id";
 
                 try
                 {
@@ -98,6 +100,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     supervisor_id = reader.IsDBNull(reader.GetOrdinal("supervisor_id")) ? null : reader.GetInt32(reader.GetOrdinal("supervisor_id")),
                                     method_summary = reader.IsDBNull(reader.GetOrdinal("method_summary")) ? null : reader.GetString(reader.GetOrdinal("method_summary")),
                                     main_result = reader.IsDBNull(reader.GetOrdinal("main_result")) ? null : reader.GetString(reader.GetOrdinal("main_result")),
+                                    description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
                                     created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
                                 _logger.LogInformation("Retrieved task with ID {TaskId} successfully", id);
@@ -120,6 +123,119 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
         }
 
+        public async Task<(IEnumerable<TasksResponse> Tasks, int TotalCount)> GetTasksPagination(int page, int pageSize, string searchTerm, int searchField)
+        {
+            var tasks = new List<TasksResponse>();
+            int totalCount = 0;
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Xây dựng câu lệnh truy vấn
+                var sqlBuilder = new StringBuilder(@"SELECT task_id, task_type, work_volume, status, address, 
+                                            ST_AsGeoJSON(geometry) as geometry, start_date, end_date, 
+                                            execution_unit_id, supervisor_id, method_summary, main_result, 
+                                            description, created_at 
+                                            FROM tasks");
+                var countSql = "SELECT COUNT(*) FROM tasks";
+                var parameters = new List<NpgsqlParameter>();
+
+                // Thêm điều kiện tìm kiếm nếu có
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    searchTerm = $"%{searchTerm.ToLower()}%"; // Chuẩn bị cho ILIKE
+                    string condition = searchField switch
+                    {
+                        0 => "CAST(task_id AS TEXT) ILIKE @searchTerm",           // ID nhiệm vụ
+                        1 => "LOWER(task_type) ILIKE @searchTerm",               // Loại nhiệm vụ
+                        2 => "LOWER(work_volume) ILIKE @searchTerm",             // Khối lượng công việc
+                        3 => "LOWER(status) ILIKE @searchTerm",                  // Trạng thái
+                        4 => "LOWER(address) ILIKE @searchTerm",                 // Địa chỉ
+                        5 => "TO_CHAR(start_date, 'DD/MM/YYYY HH24:MI') ILIKE @searchTerm", // Ngày bắt đầu
+                        6 => "TO_CHAR(end_date, 'DD/MM/YYYY HH24:MI') ILIKE @searchTerm",   // Ngày kết thúc
+                        7 => "LOWER(method_summary) ILIKE @searchTerm",          // Tóm tắt phương pháp
+                        8 => "LOWER(main_result) ILIKE @searchTerm",             // Kết quả chính
+                        9 => "LOWER(description) ILIKE @searchTerm",             // Mô tả
+                        10 => "TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI') ILIKE @searchTerm", // Ngày tạo
+                        _ => null
+                    };
+
+                    if (condition != null)
+                    {
+                        sqlBuilder.Append(" WHERE ");
+                        sqlBuilder.Append(condition);
+                        countSql += $" WHERE {condition}";
+                        parameters.Add(new NpgsqlParameter("@searchTerm", searchTerm));
+                    }
+                }
+
+                // Thêm phân trang
+                sqlBuilder.Append(" ORDER BY task_id");
+                sqlBuilder.Append(" OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY");
+                parameters.Add(new NpgsqlParameter("@offset", (page - 1) * pageSize));
+                parameters.Add(new NpgsqlParameter("@pageSize", pageSize));
+
+                try
+                {
+                    // Đếm tổng số bản ghi
+                    using (var countCmd = new NpgsqlCommand(countSql, connection))
+                    {
+                        foreach (var param in parameters)
+                        {
+                            countCmd.Parameters.Add(new NpgsqlParameter(param.ParameterName, param.Value));
+                        }
+                        totalCount = Convert.ToInt32(await countCmd.ExecuteScalarAsync());
+                    }
+
+                    // Lấy danh sách nhiệm vụ
+                    using (var cmd = new NpgsqlCommand(sqlBuilder.ToString(), connection))
+                    {
+                        foreach (var param in parameters)
+                        {
+                            cmd.Parameters.Add(new NpgsqlParameter(param.ParameterName, param.Value));
+                        }
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var task = new TasksResponse
+                                {
+                                    task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
+                                    task_type = reader.IsDBNull(reader.GetOrdinal("task_type")) ? null : reader.GetString(reader.GetOrdinal("task_type")),
+                                    work_volume = reader.IsDBNull(reader.GetOrdinal("work_volume")) ? null : reader.GetString(reader.GetOrdinal("work_volume")),
+                                    status = reader.IsDBNull(reader.GetOrdinal("status")) ? null : reader.GetString(reader.GetOrdinal("status")),
+                                    address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                    geometry = ParseGeoJson(reader.GetString(reader.GetOrdinal("geometry")), "geometry"),
+                                    start_date = reader.IsDBNull(reader.GetOrdinal("start_date")) ? null : reader.GetDateTime(reader.GetOrdinal("start_date")),
+                                    end_date = reader.IsDBNull(reader.GetOrdinal("end_date")) ? null : reader.GetDateTime(reader.GetOrdinal("end_date")),
+                                    execution_unit_id = reader.IsDBNull(reader.GetOrdinal("execution_unit_id")) ? null : reader.GetInt32(reader.GetOrdinal("execution_unit_id")),
+                                    supervisor_id = reader.IsDBNull(reader.GetOrdinal("supervisor_id")) ? null : reader.GetInt32(reader.GetOrdinal("supervisor_id")),
+                                    method_summary = reader.IsDBNull(reader.GetOrdinal("method_summary")) ? null : reader.GetString(reader.GetOrdinal("method_summary")),
+                                    main_result = reader.IsDBNull(reader.GetOrdinal("main_result")) ? null : reader.GetString(reader.GetOrdinal("main_result")),
+                                    description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
+                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                };
+                                tasks.Add(task);
+                            }
+                        }
+                    }
+
+                    _logger.LogInformation("Retrieved {Count} tasks for page {Page} with total count {TotalCount}", tasks.Count, page, totalCount);
+                    return (tasks, totalCount);
+                }
+                catch (NpgsqlException ex)
+                {
+                    _logger.LogError(ex, "Failed to retrieve tasks with pagination and search");
+                    throw new InvalidOperationException("Failed to retrieve tasks from database.", ex);
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
+            }
+        }   
+
         public async Task<TasksResponse?> CreateTask(TasksRequest entity)
         {
             ValidateRequest(entity);
@@ -129,8 +245,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO tasks 
-                (task_type, work_volume, status, address, geometry, start_date, end_date, execution_unit_id, supervisor_id, method_summary, main_result)
-                VALUES (@task_type, @work_volume, @status, @address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @start_date, @end_date, @execution_unit_id, @supervisor_id, @method_summary, @main_result)
+                (task_type, work_volume, status, address, geometry, start_date, end_date, execution_unit_id, supervisor_id, method_summary, main_result, description)
+                VALUES (@task_type, @work_volume, @status, @address, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @start_date, @end_date, @execution_unit_id, @supervisor_id, @method_summary, @main_result, @description)
                 RETURNING task_id";
 
                 try
@@ -148,6 +264,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@supervisor_id", (object)entity.supervisor_id ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@method_summary", (object)entity.method_summary ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@main_result", (object)entity.main_result ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@description", (object)entity.description ?? DBNull.Value);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         _logger.LogInformation("Created task with ID {TaskId} successfully", newId);
                         return await GetTaskById(newId);
@@ -202,7 +319,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     execution_unit_id = @execution_unit_id,
                     supervisor_id = @supervisor_id,
                     method_summary = @method_summary,
-                    main_result = @main_result
+                    main_result = @main_result,
+                    description = @description
                 WHERE task_id = @id";
 
                 try
@@ -221,6 +339,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@supervisor_id", (object)entity.supervisor_id ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@method_summary", (object)entity.method_summary ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@main_result", (object)entity.main_result ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@description", (object)entity.description ?? DBNull.Value);
 
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)

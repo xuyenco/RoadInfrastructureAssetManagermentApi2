@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Road_Infrastructure_Asset_Management_2.Interface;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 
@@ -18,6 +19,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet]
+        //[Authorize]
         public async Task<ActionResult> GetAllMaintenanceHistories()
         {
             try
@@ -35,6 +37,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("{id}")]
+        //[Authorize]
         public async Task<ActionResult> GetMaintenanceHistoryById(int id)
         {
             try
@@ -57,6 +60,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("AssetId/{id}")]
+        //[Authorize]
         public async Task<ActionResult> GetMaintenanceHistoryByAssetId(int id)
         {
             try
@@ -73,7 +77,44 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             }
         }
 
+        [HttpGet("AssetId/{id}/Paged")]
+        //[Authorize]
+        public async Task<ActionResult> GetPagedMaintenanceHistoryByAssetId(
+            int id,
+            [FromQuery] int currentPage = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string searchTerm = "",
+            [FromQuery] int searchField = 0)
+        {
+            try
+            {
+                _logger.LogInformation(
+                    "Received request to get paged maintenance histories for asset ID {AssetId} with parameters: Page={CurrentPage}, PageSize={PageSize}, SearchTerm={SearchTerm}, SearchField={SearchField}",
+                    id, currentPage, pageSize, searchTerm, searchField);
+
+                var (maintenanceHistories, totalCount) = await _Service.GetPagedMaintenanceHistoryByAssetId(id, currentPage, pageSize, searchTerm, searchField);
+
+                _logger.LogInformation(
+                    "Returned {Count} maintenance histories for asset ID {AssetId} (Page: {CurrentPage}, PageSize: {PageSize}, TotalCount: {TotalCount})",
+                    maintenanceHistories.Count(), id, currentPage, pageSize, totalCount);
+
+                return Ok(new
+                {
+                    maintenanceHistories,
+                    totalCount
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to get paged maintenance histories for asset ID {AssetId} with parameters: Page={CurrentPage}, PageSize={PageSize}, SearchTerm={SearchTerm}, SearchField={SearchField}",
+                    id, currentPage, pageSize, searchTerm, searchField);
+                return StatusCode(500, "An unexpected error occurred while retrieving paged maintenance histories.");
+            }
+        }
+
         [HttpPost]
+        //[Authorize(Roles = "inspector")]
         public async Task<ActionResult> CreateMaintenanceHistory([FromBody] MaintenanceHistoryRequest request)
         {
             if (!ModelState.IsValid)
@@ -112,6 +153,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
+        //[Authorize(Roles = "inspector")]
         public async Task<ActionResult> UpdateMaintenanceHistory(int id, [FromBody] MaintenanceHistoryRequest request)
         {
             if (!ModelState.IsValid)
@@ -157,6 +199,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
+        //[Authorize(Roles = "inspector")]
         public async Task<ActionResult> DeleteMaintenanceHistory(int id)
         {
             try

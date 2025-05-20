@@ -100,6 +100,106 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
         }
 
+
+        public async Task<(IEnumerable<MaintenanceHistoryResponse>, int)> GetPagedMaintenanceHistoryByAssetId(int id, int currentPage = 1, int pageSize = 10, string searchTerm = "", int searchField = 0)
+        {
+            var maintenanceHistories = new List<MaintenanceHistoryResponse>();
+            var totalCount = 0;
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                try
+                {
+                    // Build SQL query for data with pagination and search
+                    var whereClauses = new List<string> { "asset_id = @id" };
+                    if (!string.IsNullOrEmpty(searchTerm))
+                    {
+                        switch (searchField)
+                        {
+                            case 0: // maintenance_id
+                                whereClauses.Add("maintenance_id::text ILIKE @searchTerm");
+                                break;
+                            case 1: // task_id
+                                whereClauses.Add("task_id::text ILIKE @searchTerm");
+                                break;
+                            case 2: // created_at
+                                whereClauses.Add("TO_CHAR(created_at, 'YYYY-MM-DD') ILIKE @searchTerm");
+                                break;
+                            default:
+                                throw new ArgumentException("Invalid search field", nameof(searchField));
+                        }
+                    }
+
+                    var whereClause = string.Join(" AND ", whereClauses);
+                    var sqlData = $@"
+                        SELECT * FROM maintenance_history 
+                        WHERE {whereClause} 
+                        ORDER BY created_at DESC 
+                        LIMIT @pageSize OFFSET @offset";
+
+                    var sqlCount = $@"SELECT COUNT(*) FROM maintenance_history WHERE {whereClause}";
+
+                    // Calculate offset for pagination
+                    var offset = (currentPage - 1) * pageSize;
+
+                    // Execute count query
+                    using (var countCmd = new NpgsqlCommand(sqlCount, connection))
+                    {
+                        countCmd.Parameters.AddWithValue("@id", id);
+                        if (!string.IsNullOrEmpty(searchTerm))
+                        {
+                            countCmd.Parameters.AddWithValue("@searchTerm", $"%{searchTerm}%");
+                        }
+                        totalCount = Convert.ToInt32(await countCmd.ExecuteScalarAsync());
+                    }
+
+                    // Execute data query
+                    using (var dataCmd = new NpgsqlCommand(sqlData, connection))
+                    {
+                        dataCmd.Parameters.AddWithValue("@id", id);
+                        dataCmd.Parameters.AddWithValue("@pageSize", pageSize);
+                        dataCmd.Parameters.AddWithValue("@offset", offset);
+                        if (!string.IsNullOrEmpty(searchTerm))
+                        {
+                            dataCmd.Parameters.AddWithValue("@searchTerm", $"%{searchTerm}%");
+                        }
+
+                        using (var reader = await dataCmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var maintenanceHistory = new MaintenanceHistoryResponse
+                                {
+                                    maintenance_id = reader.GetInt32(reader.GetOrdinal("maintenance_id")),
+                                    task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
+                                    asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
+                                    created_at = reader.GetDateTime(reader.GetOrdinal("created_at"))
+                                };
+                                maintenanceHistories.Add(maintenanceHistory);
+                            }
+                        }
+                    }
+
+                    _logger.LogInformation(
+                        "Retrieved {Count} maintenance histories for asset ID {AssetId} (Page: {CurrentPage}, PageSize: {PageSize}, SearchTerm: {SearchTerm}, SearchField: {SearchField}, TotalCount: {TotalCount})",
+                        maintenanceHistories.Count, id, currentPage, pageSize, searchTerm, searchField, totalCount);
+
+                    return (maintenanceHistories, totalCount);
+                }
+                catch (NpgsqlException ex)
+                {
+                    _logger.LogError(ex, "Failed to retrieve paged maintenance histories for asset ID {AssetId} with parameters: Page={CurrentPage}, PageSize={PageSize}, SearchTerm={SearchTerm}, SearchField={SearchField}",
+                        id, currentPage, pageSize, searchTerm, searchField);
+                    throw new InvalidOperationException($"Failed to retrieve maintenance history for asset ID {id}.", ex);
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
+            }
+        }
         public async Task<MaintenanceHistoryResponse?> GetMaintenanceHistoryById(int id)
         {
             using (var _connection = new NpgsqlConnection(_connectionString))

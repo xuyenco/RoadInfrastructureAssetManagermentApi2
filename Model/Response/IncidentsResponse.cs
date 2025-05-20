@@ -6,6 +6,7 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Response
     {
         public int incident_id { get; set; }
         public string address { get; set; }
+        public string incident_type { get; set; }
         public GeoJsonGeometry geometry { get; set; } = new GeoJsonGeometry();
         public string route { get; set; }
         public string severity_level { get; set; }

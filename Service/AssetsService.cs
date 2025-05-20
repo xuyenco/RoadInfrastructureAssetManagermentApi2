@@ -7,6 +7,7 @@ using Road_Infrastructure_Asset_Management_2.Model.Geometry;
 using Road_Infrastructure_Asset_Management_2.Model.Request;
 using Road_Infrastructure_Asset_Management_2.Model.Response;
 using System.Data;
+using System.Text;
 
 namespace Road_Infrastructure_Asset_Management_2.Service
 {
@@ -19,6 +20,120 @@ namespace Road_Infrastructure_Asset_Management_2.Service
         {
             _connectionString = connectionString;
             _logger = logger;
+        }
+
+        public async Task<(IEnumerable<AssetsResponse> Assets, int TotalCount)> GetAssetsPagination(int page, int pageSize, string searchTerm, int searchField)
+        {
+            var assets = new List<AssetsResponse>();
+            int totalCount = 0;
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Build SQL query
+                var sqlBuilder = new StringBuilder(@"SELECT asset_id, category_id, ST_AsGeoJSON(geometry) as geometry, asset_name, asset_code, 
+                                            address, construction_year, operation_year, land_area, floor_area, 
+                                            original_value, remaining_value, asset_status, installation_unit, 
+                                            management_unit, custom_attributes, created_at, image_url, image_name, image_public_id
+                                            FROM assets");
+                var countSql = "SELECT COUNT(*) FROM assets";
+                var parameters = new List<NpgsqlParameter>();
+
+                // Add search conditions if searchTerm is provided
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    searchTerm = $"%{searchTerm.ToLower()}%"; // Prepare for ILIKE
+                    string condition = searchField switch
+                    {
+                        0 => "LOWER(asset_code) ILIKE @searchTerm", // Asset ID
+                        1 => "LOWER(asset_name) ILIKE @searchTerm",      // Asset Name
+                        2 => "LOWER(asset_code) ILIKE @searchTerm",      // Asset Code
+                        3 => "LOWER(address) ILIKE @searchTerm",         // Address
+                        4 => "LOWER(asset_status) ILIKE @searchTerm",    // Asset Status
+                        5 => "TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI') ILIKE @searchTerm", // Created At
+                        _ => null
+                    };
+
+                    if (condition != null)
+                    {
+                        sqlBuilder.Append(" WHERE ");
+                        sqlBuilder.Append(condition);
+                        countSql += $" WHERE {condition}";
+                        parameters.Add(new NpgsqlParameter("@searchTerm", searchTerm));
+                    }
+                }
+
+                // Add pagination
+                sqlBuilder.Append(" ORDER BY asset_id");
+                sqlBuilder.Append(" OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY");
+                parameters.Add(new NpgsqlParameter("@offset", (page - 1) * pageSize));
+                parameters.Add(new NpgsqlParameter("@pageSize", pageSize));
+
+                try
+                {
+                    // Get total count
+                    using (var countCmd = new NpgsqlCommand(countSql, connection))
+                    {
+                        foreach (var param in parameters)
+                        {
+                            countCmd.Parameters.Add(new NpgsqlParameter(param.ParameterName, param.Value));
+                        }
+                        totalCount = Convert.ToInt32(await countCmd.ExecuteScalarAsync());
+                    }
+
+                    // Get paginated assets
+                    using (var cmd = new NpgsqlCommand(sqlBuilder.ToString(), connection))
+                    {
+                        foreach (var param in parameters)
+                        {
+                            cmd.Parameters.Add(new NpgsqlParameter(param.ParameterName, param.Value));
+                        }
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var asset = new AssetsResponse
+                                {
+                                    asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
+                                    category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
+                                    geometry = reader.IsDBNull(reader.GetOrdinal("geometry")) ? null : ParseGeoJson(reader.GetString("geometry"), "geometry"),
+                                    asset_name = reader.IsDBNull(reader.GetOrdinal("asset_name")) ? null : reader.GetString(reader.GetOrdinal("asset_name")),
+                                    asset_code = reader.IsDBNull(reader.GetOrdinal("asset_code")) ? null : reader.GetString(reader.GetOrdinal("asset_code")),
+                                    address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
+                                    construction_year = reader.IsDBNull(reader.GetOrdinal("construction_year")) ? null : reader.GetDateTime(reader.GetOrdinal("construction_year")),
+                                    operation_year = reader.IsDBNull(reader.GetOrdinal("operation_year")) ? null : reader.GetDateTime(reader.GetOrdinal("operation_year")),
+                                    land_area = reader.IsDBNull(reader.GetOrdinal("land_area")) ? null : reader.GetDouble(reader.GetOrdinal("land_area")),
+                                    floor_area = reader.IsDBNull(reader.GetOrdinal("floor_area")) ? null : reader.GetDouble(reader.GetOrdinal("floor_area")),
+                                    original_value = reader.IsDBNull(reader.GetOrdinal("original_value")) ? null : reader.GetDouble(reader.GetOrdinal("original_value")),
+                                    remaining_value = reader.IsDBNull(reader.GetOrdinal("remaining_value")) ? null : reader.GetDouble(reader.GetOrdinal("remaining_value")),
+                                    asset_status = reader.IsDBNull(reader.GetOrdinal("asset_status")) ? null : reader.GetString(reader.GetOrdinal("asset_status")),
+                                    installation_unit = reader.IsDBNull(reader.GetOrdinal("installation_unit")) ? null : reader.GetString(reader.GetOrdinal("installation_unit")),
+                                    management_unit = reader.IsDBNull(reader.GetOrdinal("management_unit")) ? null : reader.GetString(reader.GetOrdinal("management_unit")),
+                                    custom_attributes = reader.IsDBNull(reader.GetOrdinal("custom_attributes")) ? null : JObject.Parse(reader.GetString(reader.GetOrdinal("custom_attributes"))),
+                                    created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at")),
+                                    image_url = reader.IsDBNull(reader.GetOrdinal("image_url")) ? null : reader.GetString(reader.GetOrdinal("image_url")),
+                                    image_name = reader.IsDBNull(reader.GetOrdinal("image_name")) ? null : reader.GetString(reader.GetOrdinal("image_name")),
+                                    image_public_id = reader.IsDBNull(reader.GetOrdinal("image_public_id")) ? null : reader.GetString(reader.GetOrdinal("image_public_id"))
+                                };
+                                assets.Add(asset);
+                            }
+                        }
+                    }
+
+                    _logger.LogInformation("Retrieved {Count} assets for page {Page} with total count {TotalCount}", assets.Count, page, totalCount);
+                    return (assets, totalCount);
+                }
+                catch (NpgsqlException ex)
+                {
+                    _logger.LogError(ex, "Failed to retrieve assets with pagination and search");
+                    throw new InvalidOperationException("Failed to retrieve assets from database.", ex);
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
+            }
         }
 
         public async Task<IEnumerable<AssetsResponse>> GetAllAssets()
@@ -44,7 +159,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                             {
                                 asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
                                 category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
-                                geometry = ParseGeoJson(reader.GetString("geometry"), "geometry"),
+                                geometry = reader.IsDBNull(reader.GetOrdinal("geometry")) ? null : ParseGeoJson(reader.GetString("geometry"), "geometry"),
                                 asset_name = reader.IsDBNull(reader.GetOrdinal("asset_name")) ? null : reader.GetString(reader.GetOrdinal("asset_name")),
                                 asset_code = reader.IsDBNull(reader.GetOrdinal("asset_code")) ? null : reader.GetString(reader.GetOrdinal("asset_code")),
                                 address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),
@@ -105,7 +220,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 {
                                     asset_id = reader.GetInt32(reader.GetOrdinal("asset_id")),
                                     category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
-                                    geometry = ParseGeoJson(reader.GetString("geometry"), "geometry"),
+                                    geometry = reader.IsDBNull(reader.GetOrdinal("geometry")) ? null : ParseGeoJson(reader.GetString("geometry"), "geometry"),
                                     asset_name = reader.IsDBNull(reader.GetOrdinal("asset_name")) ? null : reader.GetString(reader.GetOrdinal("asset_name")),
                                     asset_code = reader.IsDBNull(reader.GetOrdinal("asset_code")) ? null : reader.GetString(reader.GetOrdinal("asset_code")),
                                     address = reader.IsDBNull(reader.GetOrdinal("address")) ? null : reader.GetString(reader.GetOrdinal("address")),

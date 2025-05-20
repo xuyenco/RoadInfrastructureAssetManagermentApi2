@@ -10,6 +10,9 @@ using System.Text;
 using CloudinaryDotNet;
 using dotenv.net;
 using Serilog;
+using Road_Infrastructure_Asset_Management_2.Service;
+using Road_Infrastructure_Asset_Management_2.Hubs;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
-        .WriteTo.Console() // Ghi log ra console (tùy chọn, hữu ích khi debug)
+        .WriteTo.Console() // Ghi log ra console 
         .WriteTo.File(
             path: "logs/app.log", // Đường dẫn file log
             rollingInterval: RollingInterval.Day, // Tạo file mới mỗi ngày (app-20250421.log)
@@ -67,7 +70,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("https://localhost:7056", "http://localhost:5156")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -80,7 +84,37 @@ builder.Services.AddControllers()
     });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen( c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "RoadInfrastructureAssetManagerment2",
+        Version = "v1",
+    });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Nhập JWT Token với định dạng bearer[space] token"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+        new OpenApiSecurityScheme
+        {
+            Reference = new OpenApiReference
+            {
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        new string [] {}
+        }
+    });
+});
 
 
 // Inject the connection string, not the connection
@@ -98,6 +132,7 @@ builder.Services.AddScoped<IIncidentImageService, IncidentImageService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IMaintenanceHistoryService, MaintenanceHistoryService>();
 builder.Services.AddScoped<IMaintenanceDocumentService, MaintenanceDocumentService>();
+builder.Services.AddScoped<INotificationsService,NotificationService>();
 
 
 // Set up Cloudinary
@@ -112,6 +147,9 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 //Set NewtonSoft as default
 builder.Services.AddControllers().AddNewtonsoftJson();
 
+//Thêm signar
+builder.Services.AddSignalR(); // Thêm SignalR
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -123,10 +161,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+//CORS
+app.UseCors("AllowFrontend");
+
 app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<NotificationHub>("/notificationHub"); // Định nghĩa endpoint cho Hub
 
 app.Run();
