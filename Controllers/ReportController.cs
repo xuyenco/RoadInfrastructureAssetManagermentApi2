@@ -27,7 +27,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             try
             {
                 _logger.LogInformation("Received request to get asset status report");
-                var result = await _service.GetAssetStatusReport();
+                var result = await _service.GetAssetDistributedByCondition();
                 _logger.LogInformation("Returned {Count} asset status reports", result.Count());
                 return Ok(result);
             }
@@ -44,7 +44,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             try
             {
                 _logger.LogInformation("Received request to get incident distribution report");
-                var result = await _service.GetIncidentDistributionReport();
+                var result = await _service.GetIncidentTypeDistribution();
                 _logger.LogInformation("Returned {Count} incident distribution reports", result.Count());
                 return Ok(result);
             }
@@ -61,7 +61,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             try
             {
                 _logger.LogInformation("Received request to get task performance report");
-                var result = await _service.GetTaskPerformanceReport();
+                var result = await _service.GetTaskStatusDistribution();
                 _logger.LogInformation("Returned {Count} task performance reports", result.Count());
                 return Ok(result);
             }
@@ -78,7 +78,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             try
             {
                 _logger.LogInformation("Received request to get incident and task trend report");
-                var result = await _service.GetIncidentTaskTrendReport();
+                var result = await _service.GetIncidentsOverTime();
                 _logger.LogInformation("Returned {Count} incident and task trend reports", result.Count());
                 return Ok(result);
             }

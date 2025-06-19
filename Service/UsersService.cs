@@ -94,7 +94,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         2 => "LOWER(full_name) ILIKE @searchTerm",     // Họ và tên
                         3 => "LOWER(email) ILIKE @searchTerm",         // Email
                         4 => "LOWER(role) ILIKE @searchTerm",          // Vai trò
-                        5 => "TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI') ILIKE @searchTerm", // Ngày tạo
+                        5 => "TO_CHAR(created_at, 'HH24:MI DD/MM/YYYY') ILIKE @searchTerm", // Ngày tạo
                         _ => null
                     };
 

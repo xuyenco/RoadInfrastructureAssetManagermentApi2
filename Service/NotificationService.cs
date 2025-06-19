@@ -40,7 +40,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                             {
                                 notification_id = reader.GetInt32(reader.GetOrdinal("notification_id")),
                                 user_id = reader.GetInt32(reader.GetOrdinal("user_id")),
-                                task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
+                                task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
                                 message = reader.GetString(reader.GetOrdinal("message")),
                                 is_read = reader.GetBoolean(reader.GetOrdinal("is_read")),
                                 created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
@@ -86,7 +86,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 {
                                     notification_id = reader.GetInt32(reader.GetOrdinal("notification_id")),
                                     user_id = reader.GetInt32(reader.GetOrdinal("user_id")),
-                                    task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
+                                    task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
                                     message = reader.GetString(reader.GetOrdinal("message")),
                                     is_read = reader.GetBoolean(reader.GetOrdinal("is_read")),
                                     created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
@@ -132,7 +132,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 {
                                     notification_id = reader.GetInt32(reader.GetOrdinal("notification_id")),
                                     user_id = reader.GetInt32(reader.GetOrdinal("user_id")),
-                                    task_id = reader.GetInt32(reader.GetOrdinal("task_id")),
+                                    task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
                                     message = reader.GetString(reader.GetOrdinal("message")),
                                     is_read = reader.GetBoolean(reader.GetOrdinal("is_read")),
                                     created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
@@ -175,7 +175,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     using (var cmd = new NpgsqlCommand(sql, _connection))
                     {
                         cmd.Parameters.AddWithValue("@user_id", entity.user_id);
-                        cmd.Parameters.AddWithValue("@task_id", entity.task_id);
+                        cmd.Parameters.AddWithValue("@task_id", (object)entity.task_id ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@message", entity.message);
                         cmd.Parameters.AddWithValue("@is_read", entity.is_read);
                         cmd.Parameters.AddWithValue("@notification_type", entity.notification_type);
@@ -231,7 +231,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     {
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.Parameters.AddWithValue("@user_id", entity.user_id);
-                        cmd.Parameters.AddWithValue("@task_id", entity.task_id);
+                        cmd.Parameters.AddWithValue("@task_id", (object)entity.task_id ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@message", entity.message);
                         cmd.Parameters.AddWithValue("@is_read", entity.is_read);
                         cmd.Parameters.AddWithValue("@notification_type", entity.notification_type);

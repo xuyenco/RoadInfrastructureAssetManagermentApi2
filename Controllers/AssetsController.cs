@@ -1,5 +1,6 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -29,7 +30,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetAllAssets()
         {
             try
@@ -48,6 +49,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
 
 
         [HttpGet("paged")]
+        [Authorize]
         public async Task<ActionResult> GetAssetsPagination(int page = 1, int pageSize = 1, string searchTerm = "", int searchField = 0)
         {
             try
@@ -61,7 +63,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                 {
                     _logger.LogWarning("No assets found for Page: {Page}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
                         page, searchTerm, searchField);
-                    return NotFound("No assets found.");
+                    return Ok(new { assets, totalCount });
                 }
 
                 _logger.LogInformation("Returned {AssetsCount} users for Page: {Page}, TotalCount: {TotalCount}",
@@ -78,7 +80,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetAssetsById(int id)
         {
             try
@@ -100,8 +102,31 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             }
         }
 
+        [HttpGet("categoryid/{categoryId}")]
+        [Authorize]
+        public async Task<ActionResult> GetAssetsByCategoryId(int categoryId)
+        {
+            try
+            {
+                _logger.LogInformation("Received request to get asset with Category ID {CategoryId}", categoryId);
+                var asset = await _Service.GetAssetsByCategoryId(categoryId);
+                if (asset == null)
+                {
+                    _logger.LogWarning("Asset with Category Id {CategoryId} not found", categoryId);
+                    return NotFound("Asset does not exist");
+                }
+                _logger.LogInformation("Returned asset with Category Id {CategoryId}", categoryId);
+                return Ok(asset);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get asset with ID {CategoryId}", categoryId);
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
         [HttpPost]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> CreateAssets([FromForm] AssetImageUploadRequest request)
         {
             _logger.LogInformation("Received request to create asset with data input: {CustomAttributes}, geometry: {Geometry}",
@@ -304,7 +329,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> UpdateAssets(int id, [FromForm] AssetImageUploadRequest request)
         {
             try
@@ -492,7 +517,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> DeleteAssets(int id)
         {
             try

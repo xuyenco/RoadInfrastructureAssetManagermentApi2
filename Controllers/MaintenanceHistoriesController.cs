@@ -19,7 +19,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetAllMaintenanceHistories()
         {
             try
@@ -37,7 +37,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetMaintenanceHistoryById(int id)
         {
             try
@@ -60,7 +60,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("AssetId/{id}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetMaintenanceHistoryByAssetId(int id)
         {
             try
@@ -78,7 +78,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("AssetId/{id}/Paged")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetPagedMaintenanceHistoryByAssetId(
             int id,
             [FromQuery] int currentPage = 1,
@@ -114,7 +114,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> CreateMaintenanceHistory([FromBody] MaintenanceHistoryRequest request)
         {
             if (!ModelState.IsValid)
@@ -153,7 +153,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> UpdateMaintenanceHistory(int id, [FromBody] MaintenanceHistoryRequest request)
         {
             if (!ModelState.IsValid)
@@ -199,7 +199,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> DeleteMaintenanceHistory(int id)
         {
             try

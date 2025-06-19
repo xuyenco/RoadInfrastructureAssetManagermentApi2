@@ -12,7 +12,8 @@ namespace Road_Infrastructure_Asset_Management_2.Model.Response
         public string severity_level { get; set; }
         public string damage_level { get; set; }
         public string processing_status { get; set; }
-        public int? task_id { get; set; } 
+        public int? task_id { get; set; }
+        public string description { get; set; }
         public DateTime? created_at { get; set; }
     }
 }

@@ -27,7 +27,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetAllUsers()
         {
             try
@@ -45,7 +45,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetUsersById(int id)
         {
             try
@@ -67,7 +67,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
             }
         }
         [HttpGet("paged")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetUsersPagination(int page = 1, int pageSize = 1, string searchTerm = "", int searchField = 0)
         {
             try
@@ -81,7 +81,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                 {
                     _logger.LogWarning("No users found for Page: {Page}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
                         page, searchTerm, searchField);
-                    return NotFound("No users found.");
+                    return Ok(new { users, totalCount });
                 }
 
                 _logger.LogInformation("Returned {UserCount} users for Page: {Page}, TotalCount: {TotalCount}",
@@ -98,7 +98,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<ActionResult> CreateUsers([FromForm] UserImageUploadRequest request)
         {
             try
@@ -168,7 +168,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
-        //[Authorize(Roles = "admin")]
+        [Authorize]
         public async Task<ActionResult> UpdateUsers([FromForm] UserImageUploadRequest request, int id)
         {
             try
@@ -260,7 +260,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<ActionResult> DeleteUsers(int id)
         {
             try

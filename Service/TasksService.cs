@@ -157,7 +157,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         7 => "LOWER(method_summary) ILIKE @searchTerm",          // Tóm tắt phương pháp
                         8 => "LOWER(main_result) ILIKE @searchTerm",             // Kết quả chính
                         9 => "LOWER(description) ILIKE @searchTerm",             // Mô tả
-                        10 => "TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI') ILIKE @searchTerm", // Ngày tạo
+                        10 => "TO_CHAR(created_at, 'HH24:MI DD/MM/YYYY') ILIKE @searchTerm", // Ngày tạo
                         _ => null
                     };
 

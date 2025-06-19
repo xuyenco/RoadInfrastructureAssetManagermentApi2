@@ -8,7 +8,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class BudgetsController : ControllerBase
     {
         private readonly IBudgetsService _Service;

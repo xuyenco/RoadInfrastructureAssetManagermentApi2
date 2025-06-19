@@ -13,7 +13,6 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-
     public class AssetCagetoriesController : ControllerBase
     {
         private readonly IAssetCategoriesService _Service;
@@ -48,7 +47,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetAssetCagetoriesById(int id)
         {
             try
@@ -71,7 +70,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<ActionResult> CreateAssetCagetories([FromForm] AssetCagetoryImageUploadRequest request)
         {
             _logger.LogInformation("Received request to create asset category with data input: {AttributeSchema}", request.attribute_schema);
@@ -186,7 +185,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
-        //[Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<ActionResult> UpdateAssetCagetories(int id, [FromForm] AssetCagetoryImageUploadRequest request)
         {
             try
@@ -335,7 +334,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin,manager")]
         public async Task<ActionResult> DeleteAssetCagetories(int id)
         {
             try

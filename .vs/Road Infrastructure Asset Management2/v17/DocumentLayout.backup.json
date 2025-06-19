@@ -3,8 +3,20 @@
   "WorkspaceRootPath": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\service\\incidentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:service\\incidentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\service\\tasksservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:service\\tasksservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\service\\assetsservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:service\\assetsservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|c:\\users\\lenovo\\source\\repos\\road infrastructure asset management 2\\roadinfrastructureassetmanagementapi2\\service\\usersservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DE3FBB98-C4A6-4F6A-8A4E-C425A9E3E2B9}|Road Infrastructure Asset Management2.csproj|solutionrelative:service\\usersservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,7 +26,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 10,
           "Children": [
             {
               "$type": "Bookmark",
@@ -50,16 +62,52 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "TasksService.cs",
+              "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\TasksService.cs",
+              "RelativeDocumentMoniker": "Service\\TasksService.cs",
+              "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\TasksService.cs",
+              "RelativeToolTip": "Service\\TasksService.cs",
+              "ViewState": "AgIAAIwAAAAAAAAAAAAIwJsAAABqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-10T09:50:15.836Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "UsersService.cs",
+              "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\UsersService.cs",
+              "RelativeDocumentMoniker": "Service\\UsersService.cs",
+              "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\UsersService.cs",
+              "RelativeToolTip": "Service\\UsersService.cs",
+              "ViewState": "AgIAAE0AAAAAAAAAAAAwwGEAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-10T09:42:15.724Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "IncidentService.cs",
+              "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\IncidentService.cs",
+              "RelativeDocumentMoniker": "Service\\IncidentService.cs",
+              "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\IncidentService.cs",
+              "RelativeToolTip": "Service\\IncidentService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALoAAABLAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-10T09:39:52.879Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "AssetsService.cs",
               "DocumentMoniker": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\AssetsService.cs",
               "RelativeDocumentMoniker": "Service\\AssetsService.cs",
               "ToolTip": "C:\\Users\\Lenovo\\source\\repos\\Road Infrastructure Asset Management 2\\RoadInfrastructureAssetManagementApi2\\Service\\AssetsService.cs",
               "RelativeToolTip": "Service\\AssetsService.cs",
-              "ViewState": "AgIAABsAAAAAAAAAAAAowDAAAAAzAAAAAAAAAA==",
+              "ViewState": "AgIAABsAAAAAAAAAAAAowDQAAAA7AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-20T10:10:42.474Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-10T09:38:18.864Z"
             }
           ]
         },

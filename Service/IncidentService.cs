@@ -26,7 +26,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT incident_id, address, incident_type, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, created_at FROM incidents";
+                var sql = "SELECT incident_id, address, incident_type, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, description, created_at FROM incidents";
 
                 try
                 {
@@ -46,6 +46,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                 damage_level = reader.IsDBNull(reader.GetOrdinal("damage_level")) ? null : reader.GetString(reader.GetOrdinal("damage_level")),
                                 processing_status = reader.IsDBNull(reader.GetOrdinal("processing_status")) ? null : reader.GetString(reader.GetOrdinal("processing_status")),
                                 task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
+                                description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
                                 created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                             };
                             incidents.Add(incident);
@@ -71,7 +72,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             using (var _connection = new NpgsqlConnection(_connectionString))
             {
                 await _connection.OpenAsync();
-                var sql = "SELECT incident_id, address, incident_type, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, created_at FROM incidents WHERE incident_id = @id";
+                var sql = "SELECT incident_id, address, incident_type, ST_AsGeoJSON(geometry) as geometry, route, severity_level, damage_level, processing_status, task_id, description, created_at FROM incidents WHERE incident_id = @id";
 
                 try
                 {
@@ -93,6 +94,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     damage_level = reader.IsDBNull(reader.GetOrdinal("damage_level")) ? null : reader.GetString(reader.GetOrdinal("damage_level")),
                                     processing_status = reader.IsDBNull(reader.GetOrdinal("processing_status")) ? null : reader.GetString(reader.GetOrdinal("processing_status")),
                                     task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
+                                    description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
                                     created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
                                 _logger.LogInformation("Retrieved incident with ID {IncidentId} successfully", id);
@@ -126,7 +128,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
 
                 // Xây dựng câu lệnh truy vấn
                 var sqlBuilder = new StringBuilder(@"SELECT incident_id, address, incident_type, ST_AsGeoJSON(geometry) as geometry, route, 
-                                            severity_level, damage_level, processing_status, task_id, created_at 
+                                            severity_level, damage_level, processing_status, task_id, description, created_at 
                                             FROM incidents");
                 var countSql = "SELECT COUNT(*) FROM incidents";
                 var parameters = new List<NpgsqlParameter>();
@@ -143,8 +145,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         3 => "LOWER(severity_level) ILIKE @searchTerm",     // Mức độ nghiêm trọng
                         4 => "LOWER(damage_level) ILIKE @searchTerm",       // Mức độ hư hỏng
                         5 => "LOWER(processing_status) ILIKE @searchTerm",  // Trạng thái xử lý
-                        6 => "TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI') ILIKE @searchTerm", // Ngày tạo
-                        7 => "LOWER(incident_type) ILIKE @incident_type",
+                        6 => "TO_CHAR(created_at, 'HH24:MI DD/MM/YYYY') ILIKE @searchTerm", // Ngày tạo
+                        7 => "LOWER(incident_type) ILIKE @searchTerm", // Loại sự cố
                         _ => null
                     };
 
@@ -182,7 +184,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         {
                             cmd.Parameters.Add(new NpgsqlParameter(param.ParameterName, param.Value));
                         }
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())     
                         {
                             while (await reader.ReadAsync())
                             {
@@ -197,6 +199,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                                     damage_level = reader.IsDBNull(reader.GetOrdinal("damage_level")) ? null : reader.GetString(reader.GetOrdinal("damage_level")),
                                     processing_status = reader.IsDBNull(reader.GetOrdinal("processing_status")) ? null : reader.GetString(reader.GetOrdinal("processing_status")),
                                     task_id = reader.IsDBNull(reader.GetOrdinal("task_id")) ? null : reader.GetInt32(reader.GetOrdinal("task_id")),
+                                    description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
                                     created_at = reader.IsDBNull(reader.GetOrdinal("created_at")) ? null : reader.GetDateTime(reader.GetOrdinal("created_at"))
                                 };
                                 incidents.Add(incident);
@@ -228,8 +231,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                 await _connection.OpenAsync();
                 var sql = @"
                 INSERT INTO incidents 
-                (address, incident_type, geometry, route, severity_level, damage_level, processing_status, task_id)
-                VALUES (@address, @incident_type, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @route, @severity_level, @damage_level, @processing_status, @task_id)
+                (address, incident_type, geometry, route, severity_level, damage_level, processing_status, task_id, description)
+                VALUES (@address, @incident_type, ST_SetSRID(ST_GeomFromGeoJSON(@geometry), 3405), @route, @severity_level, @damage_level, @processing_status, @task_id, @description)
                 RETURNING incident_id";
 
                 try
@@ -244,6 +247,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@damage_level", entity.damage_level);
                         cmd.Parameters.AddWithValue("@processing_status", entity.processing_status);
                         cmd.Parameters.AddWithValue("@task_id", (object)entity.task_id ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@description",entity.description);
                         var newId = (int)(await cmd.ExecuteScalarAsync())!;
                         _logger.LogInformation("Created incident with ID {IncidentId} successfully", newId); 
                         return await GetIncidentById(newId)!;
@@ -282,7 +286,8 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                     severity_level = @severity_level,
                     damage_level = @damage_level,
                     processing_status = @processing_status,
-                    task_id = @task_id
+                    task_id = @task_id,
+                    description = @description
                 WHERE incident_id = @id";
 
                 try
@@ -298,6 +303,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
                         cmd.Parameters.AddWithValue("@damage_level", entity.damage_level);
                         cmd.Parameters.AddWithValue("@processing_status", entity.processing_status);
                         cmd.Parameters.AddWithValue("@task_id", (object)entity.task_id ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@description",entity.description);
 
                         var affectedRows = await cmd.ExecuteNonQueryAsync();
                         if (affectedRows > 0)

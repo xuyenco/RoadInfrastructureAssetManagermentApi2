@@ -16,7 +16,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             _logger = logger;
         }
 
-        public async Task<IEnumerable<AssetStatusReport>> GetAssetStatusReport()
+        public async Task<IEnumerable<AssetStatusReport>> GetAssetDistributedByCondition()
         {
             var reports = new List<AssetStatusReport>();
 
@@ -68,7 +68,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
         }
 
-        public async Task<IEnumerable<IncidentDistributionReport>> GetIncidentDistributionReport()
+        public async Task<IEnumerable<IncidentDistributionReport>> GetIncidentTypeDistribution()
         {
             var reports = new List<IncidentDistributionReport>();
 
@@ -159,7 +159,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
         }
 
-        public async Task<IEnumerable<TaskPerformanceReport>> GetTaskPerformanceReport()
+        public async Task<IEnumerable<TaskPerformanceReport>> GetTaskStatusDistribution()
         {
             var reports = new List<TaskPerformanceReport>();
 
@@ -167,22 +167,25 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             {
                 await connection.OpenAsync();
                 var sql = @"
+                WITH TaskDurations AS (
+                    SELECT 
+                        t.task_id,
+                        t.execution_unit_id,
+                        EXTRACT(EPOCH FROM (t.end_date::TIMESTAMP - t.start_date::TIMESTAMP)) / 3600.0 AS hours_to_complete
+                    FROM tasks t
+                    WHERE 
+                        t.start_date IS NOT NULL
+                        AND t.end_date IS NOT NULL
+                        AND t.end_date >= t.start_date
+                )
                 SELECT 
                     u.department_company_unit,
                     COUNT(t.task_id) AS task_count,
-                    AVG((t.end_date - t.start_date) / 3600.0) AS avg_hours_to_complete
-                FROM 
-                    tasks t
-                JOIN 
-                    users u ON t.execution_unit_id = u.user_id
-                WHERE 
-                    t.start_date IS NOT NULL
-                    AND t.end_date IS NOT NULL
-                    AND t.end_date >= t.start_date
-                GROUP BY 
-                    u.department_company_unit
-                ORDER BY 
-                    task_count DESC";
+                    AVG(t.hours_to_complete) AS avg_hours_to_complete
+                FROM TaskDurations t
+                JOIN users u ON t.execution_unit_id = u.user_id
+                GROUP BY u.department_company_unit
+                ORDER BY task_count DESC";
 
                 try
                 {
@@ -217,7 +220,7 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             }
         }
 
-        public async Task<IEnumerable<IncidentTaskTrendReport>> GetIncidentTaskTrendReport()
+        public async Task<IEnumerable<IncidentTaskTrendReport>> GetIncidentsOverTime()
         {
             var reports = new List<IncidentTaskTrendReport>();
 
@@ -225,20 +228,39 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             {
                 await connection.OpenAsync();
                 var sql = @"
+                WITH IncidentCounts AS (
+                    SELECT 
+                        DATE_TRUNC('month', created_at) AS month,
+                        COUNT(incident_id) AS incident_count
+                    FROM incidents
+                    GROUP BY DATE_TRUNC('month', created_at)
+                ),
+                TaskCounts AS (
+                    SELECT 
+                        DATE_TRUNC('month', created_at) AS month,
+                        COUNT(task_id) AS task_count,
+                        COUNT(task_id) FILTER (WHERE status = 'completed') AS completed_task_count,
+                        COUNT(task_id) FILTER (WHERE status = 'cancelled') AS cancelled_task_count
+                    FROM tasks
+                    GROUP BY DATE_TRUNC('month', created_at)
+                )
                 SELECT 
-                    DATE_TRUNC('month', COALESCE(i.created_at, t.created_at)) AS month,
-                    COUNT(i.incident_id) AS incident_count,
-                    COUNT(t.task_id) AS task_count,
-                    COALESCE(t.status, 'N/A') AS task_status,
-                    COUNT(t.task_id) FILTER (WHERE t.status = 'completed') AS completed_task_count
-                FROM 
-                    incidents i
-                FULL OUTER JOIN 
-                    tasks t ON DATE_TRUNC('month', i.created_at) = DATE_TRUNC('month', t.created_at)
-                GROUP BY 
-                    DATE_TRUNC('month', COALESCE(i.created_at, t.created_at)), t.status
-                ORDER BY 
-                    month";
+                    COALESCE(i.month, t.month) AS month,
+                    COALESCE(i.incident_count, 0) AS incident_count,
+                    COALESCE(t.task_count, 0) AS task_count,
+                    CASE 
+                        WHEN COALESCE(t.task_count, 0) = 0 THEN 'No Tasks'
+                        WHEN COALESCE(t.completed_task_count, 0)::float / 
+                             GREATEST(t.task_count - COALESCE(t.cancelled_task_count, 0), 1) >= 0.7 THEN 'Mostly Completed'
+                        WHEN COALESCE(t.completed_task_count, 0)::float / 
+                             GREATEST(t.task_count - COALESCE(t.cancelled_task_count, 0), 1) >= 0.3 THEN 'Mixed'
+                        ELSE 'Mostly In Progress'
+                    END AS task_status,
+                    COALESCE(t.completed_task_count, 0) AS completed_task_count
+                FROM IncidentCounts i
+                FULL OUTER JOIN TaskCounts t
+                    ON i.month = t.month
+                ORDER BY COALESCE(i.month, t.month);";
 
                 try
                 {
@@ -280,23 +302,36 @@ namespace Road_Infrastructure_Asset_Management_2.Service
             {
                 await connection.OpenAsync();
                 var sql = @"
+                WITH MaintenanceSummary AS (
+                    SELECT 
+                        a.asset_id,
+                        a.asset_name,
+                        COUNT(m.maintenance_id) AS maintenance_count,
+                        MAX(t.end_date) AS latest_maintenance_date
+                    FROM assets a
+                    LEFT JOIN maintenance_history m ON a.asset_id = m.asset_id
+                    LEFT JOIN tasks t ON m.task_id = t.task_id
+                    GROUP BY a.asset_id, a.asset_name
+                    HAVING COUNT(m.maintenance_id) > 0
+                ),
+                LatestTaskStatus AS (
+                    SELECT DISTINCT ON (m.asset_id)
+                        m.asset_id,
+                        COALESCE(t.status, 'N/A') AS latest_maintenance_status
+                    FROM maintenance_history m
+                    LEFT JOIN tasks t ON m.task_id = t.task_id
+                    WHERE t.end_date IS NOT NULL
+                    ORDER BY m.asset_id, t.end_date DESC
+                )
                 SELECT 
-                    a.asset_id,
-                    a.asset_name,
-                    COUNT(m.maintenance_id) AS maintenance_count,
-                    MAX(t.end_date) AS latest_maintenance_date,
-                    COALESCE(t.status, 'N/A') AS latest_maintenance_status
-                FROM 
-                    assets a
-                LEFT JOIN 
-                    maintenance_history m ON a.asset_id = m.asset_id
-                LEFT JOIN 
-                    tasks t ON m.task_id = t.task_id
-                GROUP BY 
-                    a.asset_id, a.asset_name, t.status
-                ORDER BY 
-                    maintenance_count DESC, latest_maintenance_date DESC";
-
+                    m.asset_id,
+                    m.asset_name,
+                    m.maintenance_count,
+                    m.latest_maintenance_date,
+                    l.latest_maintenance_status
+                FROM MaintenanceSummary m
+                LEFT JOIN LatestTaskStatus l ON m.asset_id = l.asset_id
+                ORDER BY m.maintenance_count DESC, m.latest_maintenance_date DESC;";
                 try
                 {
                     using (var cmd = new NpgsqlCommand(sql, connection))

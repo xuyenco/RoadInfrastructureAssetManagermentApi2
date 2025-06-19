@@ -22,7 +22,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetAllTasks()
         {
             try
@@ -40,7 +40,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetTaskById(int id)
         {
             try
@@ -63,6 +63,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("paged")]
+        [Authorize]
         public async Task<ActionResult> GetTasksPagination(int page = 1, int pageSize = 1, string searchTerm = "", int searchField = 0)
         {
             try
@@ -76,7 +77,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                 {
                     _logger.LogWarning("No tasks found for Page: {Page}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
                         page, searchTerm, searchField);
-                    return NotFound("No tasks found.");
+                    return Ok(new { tasks, totalCount });
                 }
 
                 _logger.LogInformation("Returned {TasksCount} users for Page: {Page}, TotalCount: {TotalCount}",
@@ -93,7 +94,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> CreateTask([FromBody] TasksRequest request)
         {
             if (!ModelState.IsValid)
@@ -132,7 +133,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
-        //[Authorize(Roles = "inspector,technician")]
+        [Authorize(Roles = "admin,inspector,technician")]
         public async Task<ActionResult> UpdateTask(int id, [FromBody] TasksRequest request)
         {
             if (!ModelState.IsValid)
@@ -178,7 +179,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> DeleteTask(int id)
         {
             try

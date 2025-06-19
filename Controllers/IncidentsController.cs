@@ -71,7 +71,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
                 {
                     _logger.LogWarning("No incidents found for Page: {Page}, SearchTerm: {SearchTerm}, SearchField: {SearchField}",
                         page, searchTerm, searchField);
-                    return NotFound("No incidents found.");
+                    return Ok(new {incidents,totalCount});
                 }
 
                 _logger.LogInformation("Returned {IncidentsCount} users for Page: {Page}, TotalCount: {TotalCount}",
@@ -121,7 +121,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> UpdateIncidents(int id, [FromBody] IncidentsRequest request)
         {
             if (!ModelState.IsValid)
@@ -167,7 +167,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> DeleteIncidents(int id)
         {
             try

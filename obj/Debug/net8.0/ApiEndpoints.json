@@ -349,6 +349,22 @@
   },
   {
     "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.AssetsController",
+    "Method": "GetAssetsByCategoryId",
+    "RelativePath": "api/Assets/categoryid/{categoryId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "categoryId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.AssetsController",
     "Method": "GetAssetsPagination",
     "RelativePath": "api/Assets/paged",
     "HttpMethod": "GET",
@@ -1475,26 +1491,5 @@
       }
     ],
     "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Road_Infrastructure_Asset_Management_2.Controllers.WeatherForecastController",
-    "Method": "Get",
-    "RelativePath": "WeatherForecast",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[Road_Infrastructure_Asset_Management_2.WeatherForecast, Road Infrastructure Asset Management2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ],
-    "EndpointName": "GetWeatherForecast"
   }
 ]

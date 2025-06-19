@@ -27,7 +27,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetAllMaintenanceDocuments()
         {
             try
@@ -45,7 +45,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("{id}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetMaintenanceDocumentById(int id)
         {
             try
@@ -68,7 +68,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpGet("MaintenanceId/{id}")]
-        //[Authorize]
+        [Authorize]
         public async Task<ActionResult> GetMaintenanceDocumentByMaintenanceId(int id)
         {
             try
@@ -86,7 +86,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> CreateMaintenanceDocument([FromForm] MaintenanceDocumentFileUpload request)
         {
             try
@@ -177,7 +177,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpPatch("{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> UpdateMaintenanceDocument(int id, [FromForm] MaintenanceDocumentFileUpload request)
         {
             try
@@ -295,7 +295,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> DeleteMaintenanceDocument(int id)
         {
             try
@@ -352,7 +352,7 @@ namespace Road_Infrastructure_Asset_Management_2.Controllers
         }
 
         [HttpDelete("MaintenanceId/{id}")]
-        //[Authorize(Roles = "inspector")]
+        [Authorize(Roles = "admin,inspector")]
         public async Task<ActionResult> DeleteMaintenanceDocumentByMaintenanceId(int id)
         {
             try
